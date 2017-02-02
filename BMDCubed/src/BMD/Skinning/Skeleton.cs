@@ -89,17 +89,7 @@ namespace BMDCubed.src.BMD.Skinning
 
             // For now we'll make another list that contains just the bones with geometry from boneNameList, in order,
             // so that the vertex weights and bone assignments can be used correctly.
-            foreach (string st in boneNameList)
-            {
-                foreach (Bone bone in FlatHierarchy)
-                {
-                    if (bone.Name == st)
-                    {
-                        BonesWithGeometry.Add(bone);
-                        continue;
-                    }
-                }
-            }
+            MakeBoneGeometryList();
         }
 
         private Grendgine_Collada_Node GetSkeletonFromVisualScene(Grendgine_Collada scene)
@@ -232,6 +222,21 @@ namespace BMDCubed.src.BMD.Skinning
 
                     vertexBoneIndexPairs.AddRange(skin.Vertex_Weights.V.Value());
                     vertexWeightCounts.AddRange(skin.Vertex_Weights.VCount.Value());
+                }
+            }
+        }
+
+        private void MakeBoneGeometryList()
+        {
+            foreach (string st in boneNameList)
+            {
+                foreach (Bone bone in FlatHierarchy)
+                {
+                    if (bone.Name == st)
+                    {
+                        BonesWithGeometry.Add(bone);
+                        continue;
+                    }
                 }
             }
         }
