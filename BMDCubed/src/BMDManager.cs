@@ -18,6 +18,7 @@ namespace BMDCubed.src
             Grendgine_Collada_Node skeleton = GetSkeletonFromVisualScene(scene);
             SkeletonRoot = new Bone(skeleton);
 
+            Grendgine_Collada_Skin skinningInfo = GetSkinningInfo(scene);
         }
 
         public void WriteBMD(EndianBinaryWriter writer)
@@ -70,6 +71,19 @@ namespace BMDCubed.src
             }
 
             return skelRoot;
+        }
+
+        private Grendgine_Collada_Skin GetSkinningInfo(Grendgine_Collada scene)
+        {
+            Grendgine_Collada_Skin skinning = null;
+
+            foreach (Grendgine_Collada_Controller con in scene.Library_Controllers.Controller)
+            {
+                if (con.Skin != null)
+                    skinning = con.Skin;
+            }
+
+            return skinning;
         }
     }
 }

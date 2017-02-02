@@ -23,6 +23,8 @@ namespace BMDCubed.src.BMD
 
         public string Name;
 
+        public Matrix3x4 InverseBindMatrix;
+
         public List<Bone> Children;
 
         public Bone(Grendgine_Collada_Node node)
