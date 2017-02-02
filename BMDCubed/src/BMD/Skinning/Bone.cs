@@ -23,13 +23,14 @@ namespace BMDCubed.src.BMD.Skinning
 
         public string Name;
 
-        public Matrix3x4 InverseBindMatrix;
+        public Matrix4 InverseBindMatrix;
 
         public List<Bone> Children;
 
         public Bone(Grendgine_Collada_Node node)
         {
             Children = new List<Bone>();
+            InverseBindMatrix = Matrix4.Identity;
 
             Name = node.Name;
 
@@ -51,6 +52,26 @@ namespace BMDCubed.src.BMD.Skinning
                 Bone child = new Bone(childNode);
                 Children.Add(child);
             }
+        }
+
+        public void GetInverseBindMatrixRecursive(Dictionary<string, Matrix4> matrixList)
+        {
+            foreach (KeyValuePair<string, Matrix4> mat in matrixList)
+            {
+                if (mat.Key == Name)
+                    InverseBindMatrix = mat.Value;
+            }
+
+            foreach (Bone bone in Children)
+                bone.GetInverseBindMatrixRecursive(matrixList);
+        }
+
+        public void FlattenHierarchy(List<Bone> boneList)
+        {
+            boneList.Add(this);
+
+            foreach (Bone bone in Children)
+                bone.FlattenHierarchy(boneList);
         }
     }
 }

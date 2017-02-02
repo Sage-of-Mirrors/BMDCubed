@@ -10,7 +10,15 @@ namespace BMDCubed.src.BMD.Skinning
 {
     class Skeleton
     {
+        /// <summary>
+        /// The root of the skeleton's hierarchy.
+        /// Also doubles as the root of the model's scenegraph.
+        /// </summary>
         public Bone SkeletonRoot;
+        /// <summary>
+        /// The skeleton hierarchy, flattened into a list.
+        /// </summary>
+        public List<Bone> FlatHierarchy;
 
         List<string> boneNameList;
         List<Matrix4> inverseBindMatrices;
@@ -26,6 +34,7 @@ namespace BMDCubed.src.BMD.Skinning
             weights = new List<float>();
             vertexBoneIndexPairs = new List<int>();
             vertexWeightCounts = new List<int>();
+            FlatHierarchy = new List<Bone>();
 
             SkeletonRoot = new Bone(GetSkeletonFromVisualScene(scene));
 
@@ -59,7 +68,18 @@ namespace BMDCubed.src.BMD.Skinning
                 }
             }
 
-            
+            Dictionary<string, Matrix4> matrixDict = new Dictionary<string, Matrix4>();
+
+            for (int i = 0; i < boneNameList.Count; i++)
+            {
+                matrixDict.Add(boneNameList[i], inverseBindMatrices[i]);
+            }
+
+            //Assign inverse bind matrices to the bones that need one
+            SkeletonRoot.GetInverseBindMatrixRecursive(matrixDict);
+
+            // Flatten hierarchy for easy access later
+            SkeletonRoot.FlattenHierarchy(FlatHierarchy);
         }
 
         private Grendgine_Collada_Node GetSkeletonFromVisualScene(Grendgine_Collada scene)
