@@ -19,6 +19,11 @@ namespace BMDCubed.src.BMD.Skinning
         /// The skeleton hierarchy, flattened into a list.
         /// </summary>
         public List<Bone> FlatHierarchy;
+        /// <summary>
+        /// Contains the bones with geometry assigned to them.
+        /// Derived from boneNameList.
+        /// </summary>
+        public List<Bone> BonesWithGeometry;
 
         List<string> boneNameList;
         List<Matrix4> inverseBindMatrices;
@@ -35,6 +40,7 @@ namespace BMDCubed.src.BMD.Skinning
             vertexBoneIndexPairs = new List<int>();
             vertexWeightCounts = new List<int>();
             FlatHierarchy = new List<Bone>();
+            BonesWithGeometry = new List<Bone>();
 
             SkeletonRoot = new Bone(GetSkeletonFromVisualScene(scene));
 
@@ -80,6 +86,20 @@ namespace BMDCubed.src.BMD.Skinning
 
             // Flatten hierarchy for easy access later
             SkeletonRoot.FlattenHierarchy(FlatHierarchy);
+
+            // For now we'll make another list that contains just the bones with geometry from boneNameList, in order,
+            // so that the vertex weights and bone assignments can be used correctly.
+            foreach (string st in boneNameList)
+            {
+                foreach (Bone bone in FlatHierarchy)
+                {
+                    if (bone.Name == st)
+                    {
+                        BonesWithGeometry.Add(bone);
+                        continue;
+                    }
+                }
+            }
         }
 
         private Grendgine_Collada_Node GetSkeletonFromVisualScene(Grendgine_Collada scene)
