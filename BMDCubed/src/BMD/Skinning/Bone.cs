@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using OpenTK;
 using grendgine_collada;
 
-namespace BMDCubed.src.BMD
+namespace BMDCubed.src.BMD.Skinning
 {
     class Bone
     {

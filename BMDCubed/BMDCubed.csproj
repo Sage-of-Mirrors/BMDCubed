@@ -58,7 +58,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\BMDManager.cs" />
-    <Compile Include="src\BMD\Bone.cs" />
+    <Compile Include="src\BMD\Skinning\Bone.cs" />
+    <Compile Include="src\BMD\Skinning\Skeleton.cs" />
     <Compile Include="src\BoundingBox.cs" />
   </ItemGroup>
   <ItemGroup>
