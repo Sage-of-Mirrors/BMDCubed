@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenTK;
 using grendgine_collada;
+using GameFormatReader.Common;
 
 namespace BMDCubed.src.BMD.Skinning
 {
@@ -72,6 +73,25 @@ namespace BMDCubed.src.BMD.Skinning
 
             foreach (Bone bone in Children)
                 bone.FlattenHierarchy(boneList);
+        }
+
+        public void WriteInvMatrix(EndianBinaryWriter writer)
+        {
+            // BMD stores the matrices as 3x4, so we discard the last row
+            writer.Write(InverseBindMatrix.M11);
+            writer.Write(InverseBindMatrix.M12);
+            writer.Write(InverseBindMatrix.M13);
+            writer.Write(InverseBindMatrix.M14);
+
+            writer.Write(InverseBindMatrix.M21);
+            writer.Write(InverseBindMatrix.M22);
+            writer.Write(InverseBindMatrix.M23);
+            writer.Write(InverseBindMatrix.M24);
+
+            writer.Write(InverseBindMatrix.M31);
+            writer.Write(InverseBindMatrix.M32);
+            writer.Write(InverseBindMatrix.M33);
+            writer.Write(InverseBindMatrix.M34);
         }
     }
 }

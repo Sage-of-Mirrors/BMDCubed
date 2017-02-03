@@ -23,7 +23,7 @@ namespace BMDCubed.src
 
         public void WriteBMD(EndianBinaryWriter writer)
         {
-
+            Skeleton.WriteEVP1(writer);
         }
     }
 }
