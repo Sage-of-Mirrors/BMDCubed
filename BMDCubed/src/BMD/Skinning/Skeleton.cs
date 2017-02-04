@@ -95,6 +95,8 @@ namespace BMDCubed.src.BMD.Skinning
             // so that the vertex weights and bone assignments can be used correctly.
             MakeBoneGeometryList();
 
+            List<Weight> testList = new List<Weight>();
+
             int offset = 0;
             for (int i = 0; i < vertexWeightCounts.Count; i++)
             {
@@ -110,6 +112,9 @@ namespace BMDCubed.src.BMD.Skinning
 
                     numWeights--;
                 }
+
+                if ((weight.BoneIndexes.Count) > 1 && !(testList.Contains(weight)))
+                    testList.Add(weight);
 
                 VertexWeights.Add(weight);
             }
@@ -335,7 +340,7 @@ namespace BMDCubed.src.BMD.Skinning
                 bone.WriteInvMatrix(writer);
             }
 
-            Util.PadStreamWithString(writer, 8);
+            Util.PadStreamWithString(writer, 32);
 
             writer.Seek(4, System.IO.SeekOrigin.Begin);
             writer.Write((int)writer.BaseStream.Length); // Write EVP1 size

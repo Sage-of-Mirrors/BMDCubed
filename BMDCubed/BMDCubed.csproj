@@ -62,7 +62,9 @@
     <Compile Include="src\BMD\Geometry\Vertex.cs" />
     <Compile Include="src\BMD\Skinning\Bone.cs" />
     <Compile Include="src\BMD\Skinning\Skeleton.cs" />
+    <Compile Include="src\BMD\Skinning\Weight.cs" />
     <Compile Include="src\BoundingBox.cs" />
+    <Compile Include="src\Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

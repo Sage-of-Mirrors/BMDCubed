@@ -7,6 +7,7 @@ using grendgine_collada;
 using GameFormatReader.Common;
 using BMDCubed.src.BMD.Skinning;
 using BMDCubed.src.BMD.Geometry;
+using System.IO;
 
 namespace BMDCubed.src
 {
@@ -23,7 +24,21 @@ namespace BMDCubed.src
 
         public void WriteBMD(EndianBinaryWriter writer)
         {
-            Skeleton.WriteEVP1(writer);
+            using (MemoryStream vtx1 = new MemoryStream())
+            {
+                EndianBinaryWriter vtx1Writer = new EndianBinaryWriter(vtx1, Endian.Big);
+                Geometry.WriteVTX1(vtx1Writer);
+                writer.Write(vtx1.ToArray());
+            }
+
+            using (MemoryStream evp1 = new MemoryStream())
+            {
+                EndianBinaryWriter evp1Writer = new EndianBinaryWriter(evp1, Endian.Big);
+                Skeleton.WriteEVP1(evp1Writer);
+                writer.Write(evp1.ToArray());
+            }
+            //Geometry.WriteVTX1(writer);
+            //Skeleton.WriteEVP1(writer);
         }
     }
 }

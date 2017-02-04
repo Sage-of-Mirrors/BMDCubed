@@ -27,5 +27,23 @@ namespace BMDCubed.src.BMD.Skinning
         {
             return "Bone Count: " + BoneIndexes.Count;
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj.GetType() == typeof(Weight))
+            {
+                return IsEqual(obj as Weight);
+            }
+            else
+                return false;
+        }
+
+        private bool IsEqual(Weight weight)
+        {
+            if (weight.BoneIndexes.SequenceEqual<short>(BoneIndexes) && weight.BoneWeights.SequenceEqual<float>(BoneWeights))
+                return true;
+            else
+                return false;
+        }
     }
 }
