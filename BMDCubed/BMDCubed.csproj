@@ -60,6 +60,7 @@
     <Compile Include="src\BMDManager.cs" />
     <Compile Include="src\BMD\Geometry\GeometryManager.cs" />
     <Compile Include="src\BMD\Geometry\Vertex.cs" />
+    <Compile Include="src\BMD\Geometry\VertexData.cs" />
     <Compile Include="src\BMD\Skinning\Bone.cs" />
     <Compile Include="src\BMD\Skinning\Skeleton.cs" />
     <Compile Include="src\BMD\Skinning\Weight.cs" />

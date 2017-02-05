@@ -27,7 +27,7 @@ namespace BMDCubed.src
             using (MemoryStream vtx1 = new MemoryStream())
             {
                 EndianBinaryWriter vtx1Writer = new EndianBinaryWriter(vtx1, Endian.Big);
-                Geometry.WriteVTX1(vtx1Writer);
+                Geometry.VertexData.WriteVTX1(vtx1Writer);
                 writer.Write(vtx1.ToArray());
             }
 
