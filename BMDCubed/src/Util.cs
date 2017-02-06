@@ -24,5 +24,17 @@ namespace BMDCubed.src
                 writer.Write(PaddingString[i]);
             }
         }
+
+        static public void WriteOffset(EndianBinaryWriter writer, int offset)
+        {
+            writer.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            writer.Write((int)writer.BaseStream.Length);
+            writer.BaseStream.Seek(0, System.IO.SeekOrigin.End);
+        }
+
+        static public float RadsToDegrees(float rads)
+        {
+            return (float)(rads * (180 / Math.PI));
+        }
     }
 }

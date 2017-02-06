@@ -44,6 +44,13 @@ namespace BMDCubed.src
                 Skeleton.WriteDRW1(drw1Writer);
                 writer.Write(drw1.ToArray());
             }
+
+            using (MemoryStream jnt1 = new MemoryStream())
+            {
+                EndianBinaryWriter jnt1Writer = new EndianBinaryWriter(jnt1, Endian.Big);
+                Skeleton.WriteJNT1(jnt1Writer);
+                writer.Write(jnt1.ToArray());
+            }
         }
     }
 }

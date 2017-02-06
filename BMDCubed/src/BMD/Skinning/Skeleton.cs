@@ -296,10 +296,7 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Seek(8, System.IO.SeekOrigin.Begin);
             writer.Write((short)indexCount); // Write index count
 
-            writer.Seek(0x10, System.IO.SeekOrigin.Begin);
-            writer.Write((int)writer.BaseStream.Length); // Write index data offset
-
-            writer.Seek(0, System.IO.SeekOrigin.End);
+            Util.WriteOffset(writer, 0x10);
 
             for (int i = 0; i < VertexWeights.Count; i++)
             {
@@ -313,10 +310,7 @@ namespace BMDCubed.src.BMD.Skinning
                 }
             }
 
-            writer.Seek(0x14, System.IO.SeekOrigin.Begin);
-            writer.Write((int)writer.BaseStream.Length); // Write weight data offset
-
-            writer.Seek(0, System.IO.SeekOrigin.End);
+            Util.WriteOffset(writer, 0x14);
 
             for (int i = 0; i < VertexWeights.Count; i++)
             {
@@ -330,10 +324,7 @@ namespace BMDCubed.src.BMD.Skinning
                 }
             }
 
-            writer.Seek(0x18, System.IO.SeekOrigin.Begin);
-            writer.Write((int)writer.BaseStream.Length); // Write matrix data offset
-
-            writer.Seek(0, System.IO.SeekOrigin.End);
+            Util.WriteOffset(writer, 0x18);
 
             foreach (Bone bone in FlatHierarchy)
             {
@@ -342,10 +333,7 @@ namespace BMDCubed.src.BMD.Skinning
 
             Util.PadStreamWithString(writer, 32);
 
-            writer.Seek(4, System.IO.SeekOrigin.Begin);
-            writer.Write((int)writer.BaseStream.Length); // Write EVP1 size
-
-            writer.Seek(0, System.IO.SeekOrigin.End);
+            Util.WriteOffset(writer, 4);
         }
 
         public void WriteDRW1(EndianBinaryWriter writer)
@@ -363,9 +351,7 @@ namespace BMDCubed.src.BMD.Skinning
             for (int i = 0; i < MultiBoneWeights.Count; i++)
                 writer.Write((byte)1);
 
-            writer.BaseStream.Seek(0x10, System.IO.SeekOrigin.Begin);
-            writer.Write((int)writer.BaseStream.Length);
-            writer.BaseStream.Seek(0, System.IO.SeekOrigin.End);
+            Util.WriteOffset(writer, 0x10);
 
             for (int i = 0; i < BonesWithGeometry.Count; i++)
                 writer.Write((short)FlatHierarchy.IndexOf(BonesWithGeometry[i]));
@@ -375,9 +361,33 @@ namespace BMDCubed.src.BMD.Skinning
 
             Util.PadStreamWithString(writer, 32);
 
-            writer.BaseStream.Seek(4, System.IO.SeekOrigin.Begin);
-            writer.Write((int)writer.BaseStream.Length);
-            writer.BaseStream.Seek(0, System.IO.SeekOrigin.End);
+            Util.WriteOffset(writer, 4);
+        }
+
+        public void WriteJNT1(EndianBinaryWriter writer)
+        {
+            writer.Write("JNT1".ToCharArray());
+            writer.Write(0); // Placeholder for chunk size
+            writer.Write((short)FlatHierarchy.Count); // Number of joints
+            writer.Write((short)-1); // Padding
+            writer.Write(0x18); // Offset to bone data. Always 0x18
+            writer.Write(0);
+            writer.Write(0);
+
+            // Write bone data
+            foreach (Bone bone in FlatHierarchy)
+                bone.WriteBone(writer);
+
+            Util.WriteOffset(writer, 0x10); // Write index offset
+
+            // Write index data
+            for (int i = 0; i < FlatHierarchy.Count; i++)
+                writer.Write((short)i);
+
+            Util.PadStreamWithString(writer, 32);
+            Util.WriteOffset(writer, 0x14); // Write string table offset
+
+            // Write string table
         }
     }
 }

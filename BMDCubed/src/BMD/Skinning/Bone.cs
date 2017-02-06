@@ -19,7 +19,7 @@ namespace BMDCubed.src.BMD.Skinning
 
         public Vector3 Scale;
         public Vector3 Translation;
-        public Vector3 Rotation;
+        public Quaternion Rotation;
         public BoundingBox Bounds;
 
         public string Name;
@@ -32,8 +32,10 @@ namespace BMDCubed.src.BMD.Skinning
         {
             Children = new List<Bone>();
             InverseBindMatrix = Matrix4.Identity;
+            Bounds = new BoundingBox();
 
             Name = node.Name;
+            Unknown4 = 255;
 
             float[] nodeTransform = node.Matrix[0].Value();
             Matrix4 transform = new Matrix4(nodeTransform[0], nodeTransform[1], nodeTransform[2], nodeTransform[3],
@@ -43,7 +45,7 @@ namespace BMDCubed.src.BMD.Skinning
 
             Scale = transform.ExtractScale();
             Translation = new Vector3(transform.Column3[0], transform.Column3[1], transform.Column3[2]);
-            Rotation = transform.ExtractRotation().Xyz;
+            Rotation = transform.ExtractRotation();
 
             if (node.node == null)
                 return;
@@ -92,6 +94,30 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Write(InverseBindMatrix.M32);
             writer.Write(InverseBindMatrix.M33);
             writer.Write(InverseBindMatrix.M34);
+        }
+
+        public void WriteBone(EndianBinaryWriter writer)
+        {
+            writer.Write(Unknown1);
+            writer.Write(Unknown2);
+            writer.Write(Unknown3);
+            writer.Write(Unknown4);
+
+            writer.Write(Scale.X);
+            writer.Write(Scale.Y);
+            writer.Write(Scale.Z);
+
+            Vector3 euler = Rotation.Xyz;
+            writer.Write((short)((Util.RadsToDegrees(euler.X) * 32767.0f) / 180.0f));
+            writer.Write((short)((Util.RadsToDegrees(euler.Y) * 32767.0f) / 180.0f));
+            writer.Write((short)((Util.RadsToDegrees(euler.Z) * 32767.0f) / 180.0f));
+            writer.Write((short)-1);
+
+            writer.Write(Translation.X);
+            writer.Write(Translation.Y);
+            writer.Write(Translation.Z);
+
+            Bounds.WriteBoundingBox(writer);
         }
     }
 }
