@@ -34,6 +34,7 @@ namespace BMDCubed.src.BMD.Skinning
         List<int> vertexWeightCounts;
 
         List<Weight> VertexWeights;
+        List<Weight> MultiBoneWeights;
 
         public Skeleton(Grendgine_Collada scene)
         {
@@ -45,6 +46,7 @@ namespace BMDCubed.src.BMD.Skinning
             FlatHierarchy = new List<Bone>();
             BonesWithGeometry = new List<Bone>();
             VertexWeights = new List<Weight>();
+            MultiBoneWeights = new List<Weight>();
 
             SkeletonRoot = new Bone(GetSkeletonFromVisualScene(scene));
 
@@ -95,8 +97,6 @@ namespace BMDCubed.src.BMD.Skinning
             // so that the vertex weights and bone assignments can be used correctly.
             MakeBoneGeometryList();
 
-            List<Weight> testList = new List<Weight>();
-
             int offset = 0;
             for (int i = 0; i < vertexWeightCounts.Count; i++)
             {
@@ -113,8 +113,8 @@ namespace BMDCubed.src.BMD.Skinning
                     numWeights--;
                 }
 
-                if ((weight.BoneIndexes.Count) > 1 && !(testList.Contains(weight)))
-                    testList.Add(weight);
+                if ((weight.BoneIndexes.Count) > 1)
+                    MultiBoneWeights.Add(weight);
 
                 VertexWeights.Add(weight);
             }
@@ -346,6 +346,38 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Write((int)writer.BaseStream.Length); // Write EVP1 size
 
             writer.Seek(0, System.IO.SeekOrigin.End);
+        }
+
+        public void WriteDRW1(EndianBinaryWriter writer)
+        {
+            writer.Write("DRW1".ToCharArray()); // FourCC, "DRW1"
+            writer.Write(0); // Placeholder for chunk size
+            writer.Write((short)(BonesWithGeometry.Count + MultiBoneWeights.Count));
+            writer.Write((ushort)0xFFFF); // Padding
+            writer.Write(0x14); // Offset to bool table, it's constant
+            writer.Write(0); // Placeholder for index offset
+
+            for (int i = 0; i < BonesWithGeometry.Count; i++)
+                writer.Write((byte)0);
+
+            for (int i = 0; i < MultiBoneWeights.Count; i++)
+                writer.Write((byte)1);
+
+            writer.BaseStream.Seek(0x10, System.IO.SeekOrigin.Begin);
+            writer.Write((int)writer.BaseStream.Length);
+            writer.BaseStream.Seek(0, System.IO.SeekOrigin.End);
+
+            for (int i = 0; i < BonesWithGeometry.Count; i++)
+                writer.Write((short)FlatHierarchy.IndexOf(BonesWithGeometry[i]));
+
+            for (int i = 0; i < MultiBoneWeights.Count; i++)
+                writer.Write((short)i);
+
+            Util.PadStreamWithString(writer, 32);
+
+            writer.BaseStream.Seek(4, System.IO.SeekOrigin.Begin);
+            writer.Write((int)writer.BaseStream.Length);
+            writer.BaseStream.Seek(0, System.IO.SeekOrigin.End);
         }
     }
 }
