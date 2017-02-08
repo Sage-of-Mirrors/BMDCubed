@@ -96,6 +96,7 @@ namespace BMDCubed.src.BMD.Skinning
             // We'll make another list that contains just the bones with geometry from boneNameList, in order,
             // so that the vertex weights and bone assignments can be used correctly.
             MakeBoneGeometryList();
+            List<Bone> testList = new List<Bone>();
 
             int offset = 0;
             for (int i = 0; i < vertexWeightCounts.Count; i++)
@@ -115,6 +116,8 @@ namespace BMDCubed.src.BMD.Skinning
 
                 if ((weight.BoneIndexes.Count) > 1)
                     MultiBoneWeights.Add(weight);
+                if ((weight.BoneWeights.Count == 1) && (!testList.Contains(FlatHierarchy[weight.BoneIndexes[0]])))
+                    testList.Add(FlatHierarchy[weight.BoneIndexes[0]]);
 
                 VertexWeights.Add(weight);
             }
