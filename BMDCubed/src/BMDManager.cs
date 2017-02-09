@@ -20,6 +20,7 @@ namespace BMDCubed.src
         {
             Skeleton = new Skeleton(scene);
             Geometry = new GeometryManager(scene);
+            Skeleton.AssignBoneBoundingBoxes(Geometry.VertexData.Positions);
         }
 
         public void WriteBMD(EndianBinaryWriter writer)

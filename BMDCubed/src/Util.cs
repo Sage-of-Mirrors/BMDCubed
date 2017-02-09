@@ -9,7 +9,7 @@ namespace BMDCubed.src
 {
     static class Util
     {
-        const string PaddingString = "This is padding data to align";
+        const string PaddingString = "This is padding data to align to";
 
         static public void PadStreamWithString(EndianBinaryWriter writer, int padValue)
         {
@@ -35,6 +35,18 @@ namespace BMDCubed.src
         static public float RadsToDegrees(float rads)
         {
             return (float)(rads * (180 / Math.PI));
+        }
+
+        static public ushort HashName(string name)
+        {
+            ushort hash = 0;
+            foreach (char c in name)
+            {
+                hash *= 3;
+                hash += (ushort)c;
+            }
+
+            return hash;
         }
     }
 }

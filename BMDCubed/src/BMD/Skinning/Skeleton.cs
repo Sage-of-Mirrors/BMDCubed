@@ -257,6 +257,25 @@ namespace BMDCubed.src.BMD.Skinning
             }
         }
 
+        private void WriteBoneStringTable(EndianBinaryWriter writer)
+        {
+            List<char> stringBank = new List<char>();
+
+            writer.Write((short)FlatHierarchy.Count);
+            writer.Write((short)-1);
+
+            foreach (Bone bone in FlatHierarchy)
+            {
+                writer.Write(Util.HashName(bone.Name));
+                writer.Write((short)(4 + (FlatHierarchy.Count * 4) + stringBank.Count));
+
+                stringBank.AddRange(bone.Name.ToCharArray());
+                stringBank.Add('\0');
+            }
+
+            writer.Write(stringBank.ToArray());
+        }
+
         private void MakeBoneGeometryList()
         {
             foreach (string st in boneNameList)
@@ -387,10 +406,38 @@ namespace BMDCubed.src.BMD.Skinning
             for (int i = 0; i < FlatHierarchy.Count; i++)
                 writer.Write((short)i);
 
-            Util.PadStreamWithString(writer, 32);
+            //Util.PadStreamWithString(writer, 32);
             Util.WriteOffset(writer, 0x14); // Write string table offset
 
             // Write string table
+            WriteBoneStringTable(writer);
+
+            Util.PadStreamWithString(writer, 32);
+            Util.WriteOffset(writer, 4);
+        }
+
+        public void AssignBoneBoundingBoxes(List<Vector3> verts)
+        {
+            List<Vector3>[] boneVerts = new List<Vector3>[FlatHierarchy.Count];
+
+            for (int i = 0; i < VertexWeights.Count; i++)
+            {
+                foreach (int inte in VertexWeights[i].BoneIndexes)
+                {
+                    if (boneVerts[inte] == null)
+                        boneVerts[inte] = new List<Vector3>();
+
+                    boneVerts[inte].Add(verts[i]);
+                }
+            }
+
+            for (int i = 0; i < FlatHierarchy.Count; i++)
+            {
+                if (boneVerts[i] == null)
+                    continue;
+
+                FlatHierarchy[i].Bounds = new BoundingBox(boneVerts[i]);
+            }
         }
     }
 }

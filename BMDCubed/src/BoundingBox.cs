@@ -88,7 +88,7 @@ namespace BMDCubed.src
 
             SphereRadius = ((Maximum - Minimum) / 2).Length;
 
-            //SphereRadius = radius;
+            SphereRadius = radius;
 
             #endregion
         }
