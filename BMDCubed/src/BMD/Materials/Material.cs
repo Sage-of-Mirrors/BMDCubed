@@ -44,6 +44,8 @@ namespace BMDCubed.Materials
         public bool ZCompLoc;
         public bool Dither;
 
+        public Batch MatBatch;
+
         public Material()
         {
             Name = "";
@@ -86,9 +88,11 @@ namespace BMDCubed.Materials
             ZMode = new ZMode();
         }
 
-        public Material(Grendgine_Collada_Material source, string modelPath, Batch srcBatch)
+        public Material(Grendgine_Collada_Phong source, Batch batch, string modelPath, Grendgine_Collada_Image[] textures)
         {
-            Name = source.Name;
+            MatBatch = batch;
+
+            Name = batch.MaterialName;
             Flag = 1;
             IndTexEntry = new IndirectTexturing();
             CullMode = GXCullMode.Back;
@@ -135,10 +139,12 @@ namespace BMDCubed.Materials
             Dither = true;
 
             // Add texture to TEV stage data if there is one
-            /*
-            if (source.HasTextureDiffuse)
+            
+            if (source.Diffuse.Texture != null)
             {
-                string path = "";//source.TextureDiffuse.FilePath;
+                string texName = source.Diffuse.Texture.Texture;
+                string path = textures.First(x => x.ID == texName).Init_From.Replace("file://","");
+
                 if (!Path.IsPathRooted(path))
                 {
                     string modelDir = Path.GetDirectoryName(modelPath);
@@ -147,7 +153,7 @@ namespace BMDCubed.Materials
                     if (File.Exists(texPath))
                         path = texPath;
                     else
-                        throw new ArgumentException(string.Format("Could not fined texture \"{0}\" at \"{1}\"!", path, texPath));
+                        throw new ArgumentException(string.Format("Could not find texture \"{0}\" at \"{1}\"!", path, texPath));
                 }
 
                 string imageExt = Path.GetExtension(path).ToLower();
@@ -170,11 +176,11 @@ namespace BMDCubed.Materials
                     throw new ArgumentException(string.Format("Texture {0} could not be loaded!", path));
 
                 SetTexture(Path.GetFileNameWithoutExtension(path), imageData);
-            }*/
+            }
 
             // Add vertex colors to the shader if there are any
-            /*
-            if (srcBatch.VertexColors[0].Count > 0)
+            
+            if (batch.ActiveAttributes.Contains(VertexAttributes.Color0))
             {
                 ChannelControls = new ChannelControl[4]
                 {
@@ -188,11 +194,11 @@ namespace BMDCubed.Materials
                 TevStages[1].ColorIn[2] = GXCombineColorInput.ColorPrev;
 
                 TevStages[0] = new TevStage(new GXCombineColorInput[] { GXCombineColorInput.RasColor, GXCombineColorInput.Zero, GXCombineColorInput.Zero, GXCombineColorInput.Zero },
-                GXTevOp.Add, GXTevBias.Zero, GXTevScale.Scale_1, true, 0, new GXCombineAlphaInput[] { GXCombineAlphaInput.RasAlpha, source.HasTextureDiffuse ? GXCombineAlphaInput.TexAlpha : GXCombineAlphaInput.Zero, GXCombineAlphaInput.Zero, GXCombineAlphaInput.Zero, },
+                GXTevOp.Add, GXTevBias.Zero, GXTevScale.Scale_1, true, 0, new GXCombineAlphaInput[] { GXCombineAlphaInput.RasAlpha, source.Diffuse.Texture != null ? GXCombineAlphaInput.TexAlpha : GXCombineAlphaInput.Zero, GXCombineAlphaInput.Zero, GXCombineAlphaInput.Zero, },
                 GXTevOp.Add, GXTevBias.Zero, GXTevScale.Scale_1, true, 0);
 
                 TevOrders[1] = new TevOrder(GXTexCoordSlot.TexCoord0, 0, GXColorChannelId.Color0A0);
-            }*/
+            }
 
             foreach (ChannelControl chan in ChannelControls)
             {

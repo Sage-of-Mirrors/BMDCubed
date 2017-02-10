@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using OpenTK;
 using grendgine_collada;
 using GameFormatReader.Common;
+using BMDCubed.Materials;
+using BMDCubed.src.BMD.Geometry;
 
 namespace BMDCubed.src.BMD.Skinning
 {
@@ -25,25 +27,28 @@ namespace BMDCubed.src.BMD.Skinning
         public string Name;
         public Matrix4 InverseBindMatrix;
         public List<Bone> Children;
+        public List<Material> Materials;
+        private Matrix4 transform;
 
         public Bone(Grendgine_Collada_Node node)
         {
             Children = new List<Bone>();
             InverseBindMatrix = Matrix4.Identity;
             Bounds = new BoundingBox();
+            Materials = new List<Material>();
 
             Name = node.Name;
             Unknown4 = 255;
 
             float[] nodeTransform = node.Matrix[0].Value();
-            Matrix4 transform = new Matrix4(nodeTransform[0], nodeTransform[1], nodeTransform[2], nodeTransform[3],
-                                            nodeTransform[4], nodeTransform[5], nodeTransform[6], nodeTransform[7],
-                                            nodeTransform[8], nodeTransform[9], nodeTransform[10], nodeTransform[11],
-                                            nodeTransform[12], nodeTransform[13], nodeTransform[14], nodeTransform[15]);
+            transform = new Matrix4(nodeTransform[0], nodeTransform[4], nodeTransform[8], nodeTransform[12],
+                                            nodeTransform[1], nodeTransform[5], nodeTransform[9], nodeTransform[13],
+                                            nodeTransform[2], nodeTransform[6], nodeTransform[10], nodeTransform[14],
+                                            nodeTransform[3], nodeTransform[7], nodeTransform[11], nodeTransform[15]);
 
             Scale = transform.ExtractScale();
-            Translation = new Vector3(transform.Column3[0], transform.Column3[1], transform.Column3[2]);
-            Rotation = transform.ExtractRotation();
+            Translation = transform.ExtractTranslation();
+            //Rotation = transform.ExtractRotation();
 
             if (node.node == null)
                 return;
@@ -86,7 +91,7 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Write(Scale.Y);
             writer.Write(Scale.Z);
 
-            Vector3 euler = Rotation.Xyz;
+            Vector3 euler = Util.ToEulerAngles(Rotation);
             writer.Write((short)((Util.RadsToDegrees(euler.X) * 32767.0f) / 180.0f));
             writer.Write((short)((Util.RadsToDegrees(euler.Y) * 32767.0f) / 180.0f));
             writer.Write((short)((Util.RadsToDegrees(euler.Z) * 32767.0f) / 180.0f));
@@ -97,6 +102,45 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Write(Translation.Z);
 
             Bounds.WriteBoundingBox(writer);
+        }
+
+        public void WriteScenegraphRecursive(EndianBinaryWriter writer, List<Bone> bones, List<Batch> batches, List<Material> materials)
+        {
+            writer.Write((short)0x10);
+            writer.Write((short)bones.IndexOf(this));
+
+            writer.Write((short)1);
+            writer.Write((short)0);
+
+            foreach (Material mat in Materials)
+            {
+                writer.Write((short)0x11);
+                writer.Write((short)materials.IndexOf(mat));
+
+                writer.Write((short)1);
+                writer.Write((short)0);
+
+                writer.Write((short)0x12);
+                writer.Write((short)batches.IndexOf(mat.MatBatch));
+
+                writer.Write((short)2);
+                writer.Write((short)0);
+
+                //writer.Write((short)2);
+                //writer.Write((short)0);
+            }
+
+            foreach (Bone bone in Children)
+                bone.WriteScenegraphRecursive(writer, bones, batches, materials);
+
+            for (int i = 0; i > Children.Count; i++)
+            {
+                writer.Write((short)2);
+                writer.Write((short)0);
+            }
+
+            writer.Write((short)2);
+            writer.Write((short)0);
         }
     }
 }

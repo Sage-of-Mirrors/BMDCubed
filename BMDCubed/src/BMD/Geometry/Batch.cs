@@ -22,7 +22,7 @@ namespace BMDCubed.src.BMD.Geometry
         List<int> VertexWeightIndexes;
         int numTris;
         int numVerts;
-        string MaterialName;
+        public string MaterialName;
         BoundingBox Bounds;
 
         public Batch(Grendgine_Collada_Triangles tri, DrawData drw1)
@@ -104,14 +104,14 @@ namespace BMDCubed.src.BMD.Geometry
         public void WriteBatch(EndianBinaryWriter writer, List<int> attributeOffsets, int thisIndex)
         {
             writer.Write((byte)3);
-            writer.Write((short)0xFF);
+            writer.Write((byte)0xFF);
             writer.Write((short)1);
 
             writer.Write((short)(attributeOffsets[AttributeIndex]));
             writer.Write((short)thisIndex);
             writer.Write((short)thisIndex);
 
-            writer.Write((short)0xFF);
+            writer.Write((short)-1);
 
             Bounds.WriteBoundingBox(writer);
         }
@@ -119,13 +119,13 @@ namespace BMDCubed.src.BMD.Geometry
         public void WriteMatrixIndexes(EndianBinaryWriter writer)
         {
             for (int i = 0; i < WeightIndexes.Count; i++)
-                writer.Write((short)WeightIndexes[i]);
+                writer.Write((ushort)WeightIndexes[i]);
         }
 
         public void WritePacket(EndianBinaryWriter writer)
         {
             writer.Write((byte)0x90);
-            writer.Write((short)numVerts);
+            writer.Write((ushort)numVerts);
 
             for (int i = 0; i < VertIndexes.Count; i++)
                 writer.Write(VertIndexes[i]);

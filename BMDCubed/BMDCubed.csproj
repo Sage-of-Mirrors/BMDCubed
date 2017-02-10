@@ -64,6 +64,7 @@
     <Compile Include="src\BMD\Geometry\GeometryManager.cs" />
     <Compile Include="src\BMD\Geometry\Vertex.cs" />
     <Compile Include="src\BMD\Geometry\VertexData.cs" />
+    <Compile Include="src\BMD\Materials\MaterialManager.cs" />
     <Compile Include="src\BMD\Materials\Material Classes\AlphaCompare.cs" />
     <Compile Include="src\BMD\Materials\Material Classes\BlendMode.cs" />
     <Compile Include="src\BMD\Materials\Material Classes\ChannelControl.cs" />

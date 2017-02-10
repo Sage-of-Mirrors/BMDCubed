@@ -166,8 +166,8 @@ namespace BMDCubed.src.BMD.Geometry
             // Write matrix info
             foreach (Batch bat in Batches)
             {
-                writer.Write((short)bat.WeightIndexes.Count);
                 writer.Write((short)1);
+                writer.Write((short)bat.WeightIndexes.Count);
                 writer.Write(Batches.IndexOf(bat));
             }
 
