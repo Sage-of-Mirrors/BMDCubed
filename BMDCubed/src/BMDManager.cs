@@ -20,7 +20,7 @@ namespace BMDCubed.src
         {
             //Skeleton = new SkeletonData(scene);
             Skeleton = new SkinningManager(scene);
-            Geometry = new GeometryManager(scene);
+            Geometry = new GeometryManager(scene, Skeleton.Drw1Data);
             Skeleton.SkelData.AssignBoneBoundingBoxes(Geometry.VertexData.Positions, Skeleton.Drw1Data.AllWeights);
         }
 

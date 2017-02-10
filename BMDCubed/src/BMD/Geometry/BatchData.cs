@@ -7,6 +7,7 @@ using grendgine_collada;
 using OpenTK;
 using GameFormatReader.Common;
 using System.IO;
+using BMDCubed.src.BMD.Skinning;
 
 namespace BMDCubed.src.BMD.Geometry
 {
@@ -16,14 +17,19 @@ namespace BMDCubed.src.BMD.Geometry
         List<VertexAttributes>[] ActiveAttributesPerBatch;
         List<int> vertexAttributeOffsets;
 
-        public BatchData(Grendgine_Collada_Mesh mesh)
+        public BatchData(Grendgine_Collada_Mesh mesh, DrawData drw1)
         {
             Batches = new List<Batch>();
 
             foreach (Grendgine_Collada_Triangles tri in mesh.Triangles)
             {
-                //Batch batch = new Batch(tri);
-                //Batches.Add(batch);
+                Batch batch = new Batch(tri, drw1);
+
+                // Tri count was zero, couldn't initialize batch
+                if (batch.ActiveAttributes == null)
+                    continue;
+                else
+                    Batches.Add(batch);
             }
 
             ActiveAttributesPerBatch = new List<VertexAttributes>[Batches.Count];
@@ -88,10 +94,7 @@ namespace BMDCubed.src.BMD.Geometry
                     for (int i = 0; i < dat.Count; i++)
                     {
                         attribWriter.Write((int)dat[i]);
-                        if (dat[i] == VertexAttributes.PositionMatrixIndex)
-                            attribWriter.Write(1);
-                        else
-                            attribWriter.Write(3);
+                        attribWriter.Write(3);
                     }
 
                     attribWriter.Write(0xFF);

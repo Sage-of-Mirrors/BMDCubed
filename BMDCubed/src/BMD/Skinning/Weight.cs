@@ -32,13 +32,13 @@ namespace BMDCubed.src.BMD.Skinning
         {
             if (obj.GetType() == typeof(Weight))
             {
-                return IsEqual(obj as Weight);
+                return isEqual(obj as Weight);
             }
             else
                 return false;
         }
 
-        private bool IsEqual(Weight weight)
+        private bool isEqual(Weight weight)
         {
             if (weight.BoneIndexes.SequenceEqual<short>(BoneIndexes) && weight.BoneWeights.SequenceEqual<float>(BoneWeights))
                 return true;

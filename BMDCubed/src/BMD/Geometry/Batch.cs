@@ -14,23 +14,31 @@ namespace BMDCubed.src.BMD.Geometry
     {
         public List<VertexAttributes> ActiveAttributes;
         public int AttributeIndex = 0;
-        List<int> VertIndexes;
+
+        List<short> VertIndexes;
+
         List<int> PositionIndex;
         List<int> WeightIndexes;
+        List<int> VertexWeightIndexes;
+        int numTris;
+        int numVerts;
         string MaterialName;
         BoundingBox Bounds;
 
         public Batch(Grendgine_Collada_Triangles tri, DrawData drw1)
         {
+            if (tri.Count == 0)
+                return;
+
             ActiveAttributes = new List<VertexAttributes>();
-            VertIndexes = new List<int>();
+            VertIndexes = new List<short>();
             PositionIndex = new List<int>();
             WeightIndexes = new List<int>();
             MaterialName = tri.Material;
+            numTris = tri.Count;
 
             int uvIndex = 0;
             int colorIndex = 0;
-
             foreach (Grendgine_Collada_Input_Shared input in tri.Input)
             {
                 switch (input.Semantic)
@@ -51,13 +59,15 @@ namespace BMDCubed.src.BMD.Geometry
                 }
             }
 
+            numVerts = numTris * 3;
+
             string indexArrayString = tri.P.Value_As_String;
             indexArrayString = indexArrayString.Replace('\n', ' ').Trim();
             int[] indexArray = Grendgine_Collada_Parse_Utils.String_To_Int(indexArrayString);
 
             //VertIndexes.AddRange(indexArray);
 
-            for (int i = 0; i < VertIndexes.Count; i += ActiveAttributes.Count)
+            for (int i = 0; i < indexArray.Length; i += ActiveAttributes.Count)
             {
                 for (int attrib = 0; attrib < ActiveAttributes.Count; attrib++)
                 {
@@ -65,17 +75,17 @@ namespace BMDCubed.src.BMD.Geometry
                     {
                         int positionIndex = indexArray[i + attrib];
                         PositionIndex.Add(positionIndex);
-                        VertIndexes.Add(positionIndex);
+                        VertIndexes.Add((short)positionIndex);
 
                         WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
                     }
                     else
                     {
-                        VertIndexes.Add(indexArray[i + attrib]);
+                        VertIndexes.Add((short)indexArray[i + attrib]);
                     }
                 }
 
-                //VertIndexes.Add();
+                VertIndexes.Add((short)(WeightIndexes.Count - 1));
             }
 
             ActiveAttributes.Add(VertexAttributes.PositionMatrixIndex);
@@ -106,6 +116,15 @@ namespace BMDCubed.src.BMD.Geometry
             writer.Write((short)0xFF);
 
             Bounds.WriteBoundingBox(writer);
+        }
+
+        public void WritePacket(EndianBinaryWriter writer)
+        {
+            //writer.Write((byte));
+            writer.Write((short)numVerts);
+
+            for (int i = 0; i < VertIndexes.Count; i++)
+                writer.Write(VertIndexes[i]);
         }
     }
 }

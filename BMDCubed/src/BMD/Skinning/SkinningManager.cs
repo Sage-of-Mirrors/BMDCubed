@@ -15,7 +15,7 @@ namespace BMDCubed.src.BMD.Skinning
 
         public SkinningManager(Grendgine_Collada scene)
         {
-            Grendgine_Collada_Skin skinning = scene.Library_Controllers.Controller[0].Skin;
+            Grendgine_Collada_Skin skinning = GetSkinningInfo(scene);
 
             SkelData = new SkeletonData(scene, skinning);
             Drw1Data = new DrawData(skinning, SkelData.FlatHierarchy, SkelData.BonesWithGeometry);
