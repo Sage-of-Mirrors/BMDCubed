@@ -25,6 +25,20 @@ namespace BMDCubed.src
             }
         }
 
+        static public void PadStreamWithZero(EndianBinaryWriter writer, int padValue)
+        {
+            // Pad up to a 32 byte alignment
+            // Formula: (x + (n-1)) & ~(n-1)
+            long nextAligned = (writer.BaseStream.Length + (padValue - 1)) & ~(padValue - 1);
+
+            long delta = nextAligned - writer.BaseStream.Length;
+            writer.BaseStream.Position = writer.BaseStream.Length;
+            for (int i = 0; i < delta; i++)
+            {
+                writer.Write(0);
+            }
+        }
+
         static public void WriteOffset(EndianBinaryWriter writer, int offset)
         {
             writer.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);

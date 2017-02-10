@@ -18,7 +18,7 @@ namespace BMDCubed.src.BMD.Geometry
         List<short> VertIndexes;
 
         List<int> PositionIndex;
-        List<int> WeightIndexes;
+        public List<int> WeightIndexes;
         List<int> VertexWeightIndexes;
         int numTris;
         int numVerts;
@@ -64,8 +64,6 @@ namespace BMDCubed.src.BMD.Geometry
             string indexArrayString = tri.P.Value_As_String;
             indexArrayString = indexArrayString.Replace('\n', ' ').Trim();
             int[] indexArray = Grendgine_Collada_Parse_Utils.String_To_Int(indexArrayString);
-
-            //VertIndexes.AddRange(indexArray);
 
             for (int i = 0; i < indexArray.Length; i += ActiveAttributes.Count)
             {
@@ -118,13 +116,21 @@ namespace BMDCubed.src.BMD.Geometry
             Bounds.WriteBoundingBox(writer);
         }
 
+        public void WriteMatrixIndexes(EndianBinaryWriter writer)
+        {
+            for (int i = 0; i < WeightIndexes.Count; i++)
+                writer.Write((short)WeightIndexes[i]);
+        }
+
         public void WritePacket(EndianBinaryWriter writer)
         {
-            //writer.Write((byte));
+            writer.Write((byte)0x90);
             writer.Write((short)numVerts);
 
             for (int i = 0; i < VertIndexes.Count; i++)
                 writer.Write(VertIndexes[i]);
+
+            Util.PadStreamWithZero(writer, 8);
         }
     }
 }

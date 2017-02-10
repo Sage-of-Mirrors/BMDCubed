@@ -80,10 +80,16 @@ namespace BMDCubed.src.BMD.Geometry
             writer.Write(0); // Placeholder for offset to matrix data
             writer.Write(0); // Placeholder for offset to packet location data
 
+            // Batch data is found *before* the attribute data. Unfortunately, we need the attribute data
+            // first so we can get the offset of the attribute set that each batch uses.
+            // So we're going to write the attribute data to a memory stream, then use that to
+            // write the batch data to the output stream.
+            // Then we'll copy the attribute data to the output stream.
             using (MemoryStream batchAttribData = new MemoryStream())
             {
                 EndianBinaryWriter attribWriter = new EndianBinaryWriter(batchAttribData, Endian.Big);
 
+                // Write attribute data to memorystream
                 foreach (List<VertexAttributes> dat in ActiveAttributesPerBatch)
                 {
                     if (dat == null)
@@ -97,21 +103,85 @@ namespace BMDCubed.src.BMD.Geometry
                         attribWriter.Write(3);
                     }
 
+                    // Add null attribute. Tells the GPU there are no more attributes to read
                     attribWriter.Write(0xFF);
                     attribWriter.Write(0);
                 }
 
+                // Write batch data
                 WriteBatches(writer);
+
+                // Write index array offset. Don't know what this does, really
                 Util.WriteOffset(writer, 0x10);
 
+                // Write index array offset
                 for (int i = 0; i < Batches.Count; i++)
                     writer.Write((short)i);
 
+                Util.PadStreamWithString(writer, 32);
+
+                // Write attribute data offset
                 Util.WriteOffset(writer, 0x18);
+
+                // Write attribute data
                 writer.Write(batchAttribData.ToArray());
             }
 
+            // Write matrix indexes offset
             Util.WriteOffset(writer, 0x1C);
+
+            // Write matrix indexes
+            foreach (Batch bat in Batches)
+            {
+                bat.WriteMatrixIndexes(writer);
+            }
+
+            Util.PadStreamWithString(writer, 32);
+
+            // Write packet offset
+            Util.WriteOffset(writer, 0x20);
+
+            // We're going to keep track of the packets' length and offset relative to the
+            // start of the packet data so we can write the packet info data later on.
+            List<int> packetOffsets = new List<int>();
+            List<int> packetSizes = new List<int>();
+            packetOffsets.Add(0);
+
+            int basePos = (int)writer.BaseStream.Length; // Offset of first packet
+            int lastPos = basePos; // This will hold the offset of the last packet so we can calculate size
+
+            // Write packet data
+            foreach (Batch bat in Batches)
+            {
+                bat.WritePacket(writer);
+                packetOffsets.Add((int)writer.BaseStream.Length - basePos);
+                packetSizes.Add((int)writer.BaseStream.Length - lastPos);
+
+                lastPos = (int)writer.BaseStream.Length;
+            }
+
+            // Write matrix info offset
+            Util.WriteOffset(writer, 0x24);
+
+            // Write matrix info
+            foreach (Batch bat in Batches)
+            {
+                writer.Write((short)bat.WeightIndexes.Count);
+                writer.Write((short)1);
+                writer.Write(Batches.IndexOf(bat));
+            }
+
+            // Write packet info offset
+            Util.WriteOffset(writer, 0x28);
+
+            // Write packet info
+            for (int i = 0; i < Batches.Count; i++)
+            {
+                writer.Write(packetSizes[i]);
+                writer.Write(packetOffsets[i]);
+            }
+
+            Util.PadStreamWithString(writer, 32);
 
             // Write chunk size
             Util.WriteOffset(writer, 4);
