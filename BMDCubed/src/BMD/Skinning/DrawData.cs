@@ -11,12 +11,12 @@ namespace BMDCubed.src.BMD.Skinning
 {
     class DrawData
     {
-        public List<Weight> AllWeights;
-        public List<Weight> AllDrw1Weights;
+        public List<Weight> AllWeights; // This contains all the weights from the skin, including duplicates
+        public List<Weight> AllDrw1Weights; // This contains the full weights and the partial weights, in that order, without duplicates
         public List<Matrix4> InverseBindMatrices;
 
-        List<Weight> fullWeightList;
-        List<Weight> partialWeightList;
+        List<Weight> fullWeightList; // List of full weights, no duplicates
+        List<Weight> partialWeightList; // List of partial weights, no duplicates
 
         public DrawData(Grendgine_Collada_Skin skin, List<Bone> flat, List<Bone> geom)
         {
@@ -56,7 +56,7 @@ namespace BMDCubed.src.BMD.Skinning
         /// <param name="skin">Skin to pull weights from</param>
         /// <param name="geom">List of bones that contain geometry</param>
         /// <param name="flat">Flattened hierarchy of all bones in the mesh</param>
-        private void getWeights(Grendgine_Collada_Skin skin, List<Bone> geom, List<Bone> flat)
+        private void getWeights(Grendgine_Collada_Skin skin, List<Bone> flat, List<Bone> geom)
         {
             int[] bonePairs = Grendgine_Collada_Parse_Utils.String_To_Int(skin.Vertex_Weights.V.Value_As_String.Replace('\n', ' ').Trim());
             int[] boneWeightCounts = Grendgine_Collada_Parse_Utils.String_To_Int(skin.Vertex_Weights.VCount.Value_As_String.Replace('\n', ' ').Trim());
@@ -112,7 +112,7 @@ namespace BMDCubed.src.BMD.Skinning
             // Run through the Source objects to find the one that has the weight data
             foreach (Grendgine_Collada_Source src in skin.Source)
             {
-                if (src.Name == weightSource)
+                if (src.ID == weightSource)
                 {
                     floatArray = Grendgine_Collada_Parse_Utils.String_To_Float(src.Float_Array.Value_As_String.Replace('\n', ' ').Trim());
                 }

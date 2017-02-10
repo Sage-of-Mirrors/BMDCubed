@@ -13,16 +13,15 @@ namespace BMDCubed.src
 {
     class BMDManager
     {
-        public SkinningManager Skeleton1;
-        public SkeletonData Skeleton;
+        public SkinningManager Skeleton;
         public GeometryManager Geometry;
 
         public BMDManager(Grendgine_Collada scene)
         {
             //Skeleton = new SkeletonData(scene);
-            Skeleton1 = new SkinningManager(scene);
+            Skeleton = new SkinningManager(scene);
             Geometry = new GeometryManager(scene);
-            Skeleton.AssignBoneBoundingBoxes(Geometry.VertexData.Positions);
+            Skeleton.SkelData.AssignBoneBoundingBoxes(Geometry.VertexData.Positions, Skeleton.Drw1Data.AllWeights);
         }
 
         public void WriteBMD(EndianBinaryWriter writer)
@@ -53,7 +52,7 @@ namespace BMDCubed.src
             using (MemoryStream evp1 = new MemoryStream())
             {
                 EndianBinaryWriter evp1Writer = new EndianBinaryWriter(evp1, Endian.Big);
-                Skeleton.WriteEVP1(evp1Writer);
+                Skeleton.Drw1Data.WriteEVP1(evp1Writer);
                 writer.Write(evp1.ToArray());
             }
 
@@ -61,7 +60,7 @@ namespace BMDCubed.src
             using (MemoryStream drw1 = new MemoryStream())
             {
                 EndianBinaryWriter drw1Writer = new EndianBinaryWriter(drw1, Endian.Big);
-                Skeleton.drw1Data.WriteDRW1(drw1Writer);
+                Skeleton.Drw1Data.WriteDRW1(drw1Writer);
                 writer.Write(drw1.ToArray());
             }
 
@@ -69,7 +68,7 @@ namespace BMDCubed.src
             using (MemoryStream jnt1 = new MemoryStream())
             {
                 EndianBinaryWriter jnt1Writer = new EndianBinaryWriter(jnt1, Endian.Big);
-                Skeleton.WriteJNT1(jnt1Writer);
+                Skeleton.SkelData.WriteJNT1(jnt1Writer);
                 writer.Write(jnt1.ToArray());
             }
 

@@ -11,41 +11,23 @@ namespace BMDCubed.src.BMD.Skinning
 {
     class SkeletonData
     {
-        /// <summary>
-        /// The root of the skeleton's hierarchy.
-        /// Also doubles as the root of the model's scenegraph.
-        /// </summary>
-        public Bone SkeletonRoot;
-        /// <summary>
-        /// The skeleton hierarchy, flattened into a list.
-        /// </summary>
-        public List<Bone> FlatHierarchy;
-        /// <summary>
-        /// Contains the bones with geometry assigned to them.
-        /// Derived from boneNameList.
-        /// </summary>
-        public List<Bone> BonesWithGeometry;
+        public Bone SkeletonRoot; // Root of the mesh's skeleton
+        public List<Bone> FlatHierarchy; // Hierarchy of the mesh skeleton, flattened into a linear list
+        public List<Bone> BonesWithGeometry; // All bones in the mesh that have geometry assigned to them
 
         List<string> boneNameList;
         List<Matrix4> inverseBindMatrices;
-        List<float> weights;
 
-        List<int> vertexBoneIndexPairs;
-        List<int> vertexWeightCounts;
-
-        List<Weight> VertexWeights;
-        List<Weight> MultiBoneWeights;
-
-        public DrawData drw1Data;
-
-        public SkeletonData(Grendgine_Collada scene)
+        public SkeletonData(Grendgine_Collada scene, Grendgine_Collada_Skin skin)
         {
             FlatHierarchy = new List<Bone>();
             BonesWithGeometry = new List<Bone>();
 
-            SkeletonRoot = new Bone(GetSkeletonFromVisualScene(scene));
+            boneNameList = new List<string>();
+            inverseBindMatrices = new List<Matrix4>();
 
-            Grendgine_Collada_Skin skin = GetSkinningInfo(scene);
+            // Get the skeleton's root from the visual scene
+            SkeletonRoot = new Bone(GetSkeletonFromVisualScene(scene));
 
             // Get bone names and inverse bind matrices
             if (skin.Joints != null)
@@ -128,19 +110,6 @@ namespace BMDCubed.src.BMD.Skinning
             return skelRoot;
         }
 
-        private Grendgine_Collada_Skin GetSkinningInfo(Grendgine_Collada scene)
-        {
-            Grendgine_Collada_Skin skinning = null;
-
-            foreach (Grendgine_Collada_Controller con in scene.Library_Controllers.Controller)
-            {
-                if (con.Skin != null)
-                    skinning = con.Skin;
-            }
-
-            return skinning;
-        }
-
         private void GetJointNamesFromSkin(string source, Grendgine_Collada_Skin skin)
         {
             foreach (Grendgine_Collada_Source src in skin.Source)
@@ -198,25 +167,6 @@ namespace BMDCubed.src.BMD.Skinning
             }
         }
 
-        private void WriteBoneStringTable(EndianBinaryWriter writer)
-        {
-            List<char> stringBank = new List<char>();
-
-            writer.Write((short)FlatHierarchy.Count);
-            writer.Write((short)-1);
-
-            foreach (Bone bone in FlatHierarchy)
-            {
-                writer.Write(Util.HashName(bone.Name));
-                writer.Write((short)(4 + (FlatHierarchy.Count * 4) + stringBank.Count));
-
-                stringBank.AddRange(bone.Name.ToCharArray());
-                stringBank.Add('\0');
-            }
-
-            writer.Write(stringBank.ToArray());
-        }
-
         private void MakeBoneGeometryList()
         {
             foreach (string st in boneNameList)
@@ -262,13 +212,32 @@ namespace BMDCubed.src.BMD.Skinning
             Util.WriteOffset(writer, 4);
         }
 
-        public void AssignBoneBoundingBoxes(List<Vector3> verts)
+        private void WriteBoneStringTable(EndianBinaryWriter writer)
+        {
+            List<char> stringBank = new List<char>();
+
+            writer.Write((short)FlatHierarchy.Count);
+            writer.Write((short)-1);
+
+            foreach (Bone bone in FlatHierarchy)
+            {
+                writer.Write(Util.HashName(bone.Name));
+                writer.Write((short)(4 + (FlatHierarchy.Count * 4) + stringBank.Count));
+
+                stringBank.AddRange(bone.Name.ToCharArray());
+                stringBank.Add('\0');
+            }
+
+            writer.Write(stringBank.ToArray());
+        }
+
+        public void AssignBoneBoundingBoxes(List<Vector3> verts, List<Weight> weights)
         {
             List<Vector3>[] boneVerts = new List<Vector3>[FlatHierarchy.Count];
 
-            for (int i = 0; i < VertexWeights.Count; i++)
+            for (int i = 0; i < weights.Count; i++)
             {
-                foreach (int inte in VertexWeights[i].BoneIndexes)
+                foreach (int inte in weights[i].BoneIndexes)
                 {
                     if (boneVerts[inte] == null)
                         boneVerts[inte] = new List<Vector3>();
