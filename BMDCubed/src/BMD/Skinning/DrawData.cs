@@ -4,69 +4,229 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using GameFormatReader.Common;
+using grendgine_collada;
+using OpenTK;
 
 namespace BMDCubed.src.BMD.Skinning
 {
     class DrawData
     {
-        public List<Weight> FullWeightList;
-        public List<Weight> PartialWeightList;
         public List<Weight> AllWeights;
-
         public List<Weight> AllDrw1Weights;
-        List<Bone> FlatHierarchy;
-        List<Bone> BonesWithGeometry;
+        public List<Matrix4> InverseBindMatrices;
 
-        public DrawData(List<Weight> allWeights, List<Bone> flat, List<Bone> geom)
+        List<Weight> fullWeightList;
+        List<Weight> partialWeightList;
+
+        public DrawData(Grendgine_Collada_Skin skin, List<Bone> flat, List<Bone> geom)
         {
-            FullWeightList = new List<Weight>();
-            PartialWeightList = new List<Weight>();
             AllDrw1Weights = new List<Weight>();
-            AllWeights = allWeights;
-            FlatHierarchy = flat;
-            BonesWithGeometry = geom;
+            AllWeights = new List<Weight>();
+            InverseBindMatrices = new List<Matrix4>();
 
-            foreach (Weight weight in allWeights)
+            fullWeightList = new List<Weight>();
+            partialWeightList = new List<Weight>();
+
+            getWeights(skin, flat, geom);
+
+            // Sort weights between full weights (with only 1 bone)
+            // and partial weights (with more than 1 bone).
+            // We'll also cull duplicates.
+            foreach (Weight weight in AllWeights)
             {
-                if (weight.BoneWeights.Count == 1 && !FullWeightList.Contains(weight))
+                if (weight.BoneWeights.Count == 1 && !fullWeightList.Contains(weight))
+                    fullWeightList.Add(weight);
+                else if (weight.BoneWeights.Count > 1 && !partialWeightList.Contains(weight))
+                    partialWeightList.Add(weight);
+            }
+
+            // Create the full list of weights. Full weights first, then partial
+            AllDrw1Weights.AddRange(fullWeightList.ToArray());
+            AllDrw1Weights.AddRange(partialWeightList.ToArray());
+
+            // We'll rip the inverse bind matrices from the hierarchy so we can
+            // use them to write the EVP1 chunk later
+            foreach (Bone bone in flat)
+                InverseBindMatrices.Add(bone.InverseBindMatrix);
+        }
+
+        /// <summary>
+        /// Populates the AllWeights list with the weights from the mesh.
+        /// </summary>
+        /// <param name="skin">Skin to pull weights from</param>
+        /// <param name="geom">List of bones that contain geometry</param>
+        /// <param name="flat">Flattened hierarchy of all bones in the mesh</param>
+        private void getWeights(Grendgine_Collada_Skin skin, List<Bone> geom, List<Bone> flat)
+        {
+            int[] bonePairs = Grendgine_Collada_Parse_Utils.String_To_Int(skin.Vertex_Weights.V.Value_As_String.Replace('\n', ' ').Trim());
+            int[] boneWeightCounts = Grendgine_Collada_Parse_Utils.String_To_Int(skin.Vertex_Weights.VCount.Value_As_String.Replace('\n', ' ').Trim());
+            float[] weightData = getWeightData(skin);
+
+            // We'll fill the main list of all the weights in the mesh, regardless of full/partial weight
+            // or duplicates.
+            int offset = 0;
+            for (int i = 0; i < boneWeightCounts.Length; i++)
+            {
+                int numWeights = boneWeightCounts[i];
+                Weight weight = new Weight();
+
+                for (int j = 0; j < numWeights; j++)
                 {
-                    FullWeightList.Add(weight);
+                    Bone bone = geom[bonePairs[offset]];
+                    offset++;
+
+                    float weightVal = weightData[bonePairs[offset]];
+                    offset++;
+
+                    weight.AddBoneWeight((short)flat.IndexOf(bone), weightVal);
                 }
-                else if (weight.BoneWeights.Count > 1 && !PartialWeightList.Contains(weight))
+
+                AllWeights.Add(weight);
+            }
+        }
+
+        /// <summary>
+        /// Gets the float data representing the actual weights on a vertex.
+        /// </summary>
+        /// <param name="skin">Skin to pull weight data from</param>
+        /// <returns>Float array containing the actual weight data</returns>
+        private float[] getWeightData(Grendgine_Collada_Skin skin)
+        {
+            float[] floatArray = new float[32];
+
+            // Get the name of the Source object containing the weight data
+            string weightSource = "";
+            for (int i = 0; i < skin.Vertex_Weights.Input.Length; i++)
+            {
+                if (skin.Vertex_Weights.Input[i].Semantic == Grendgine_Collada_Input_Semantic.WEIGHT)
                 {
-                    PartialWeightList.Add(weight);
+                    weightSource = skin.Vertex_Weights.Input[i].source.Remove(0, 1);
+                    break;
                 }
             }
 
-            AllDrw1Weights.AddRange(FullWeightList.ToArray());
-            AllDrw1Weights.AddRange(PartialWeightList.ToArray());
+            // We didn't find weight data. PANIC!!!!!
+            if (weightSource == "")
+                throw new FormatException("No weight data found!");
+
+            // Run through the Source objects to find the one that has the weight data
+            foreach (Grendgine_Collada_Source src in skin.Source)
+            {
+                if (src.Name == weightSource)
+                {
+                    floatArray = Grendgine_Collada_Parse_Utils.String_To_Float(src.Float_Array.Value_As_String.Replace('\n', ' ').Trim());
+                }
+            }
+
+            return floatArray;
         }
 
-        public void WriteDRW1(EndianBinaryWriter writer)
+        /// <summary>
+        /// Outputs an EVP1 chunk to the specified stream.
+        /// </summary>
+        /// <param name="writer">Stream to write EVP1 to</param>
+        public void WriteEVP1(EndianBinaryWriter writer)
         {
-            writer.Write("DRW1".ToCharArray()); // FourCC, "DRW1"
-            writer.Write(0); // Placeholder for chunk size
-            writer.Write((short)(FullWeightList.Count + PartialWeightList.Count));
-            writer.Write((ushort)0xFFFF); // Padding
-            writer.Write(0x14); // Offset to bool table, it's constant
-            writer.Write(0); // Placeholder for index offset
+            // Header
+            writer.Write("EVP1".ToCharArray()); // FourCC, "EVP1"
+            writer.Write((int)0); // Placeholder for size
+            writer.Write((short)partialWeightList.Count); // Number of weights
+            writer.Write((short)-1); // Padding for header
 
-            for (int i = 0; i < FullWeightList.Count; i++)
-                writer.Write((byte)0);
+            writer.Write((int)0x1C); // Offset to index count section, always 0x1C
+            writer.Write((int)0); // Placeholder for index data offset
+            writer.Write((int)0); // Placeholder for weight data offset
+            writer.Write((int)0); // Placeholder for inverse bind matrix offset
 
-            for (int i = 0; i < PartialWeightList.Count; i++)
-                writer.Write((byte)1);
+            // Write index count table
+            for (int i = 0; i < partialWeightList.Count; i++)
+                writer.Write((byte)(partialWeightList[i].BoneIndexes.Count));
 
+            // Write offset to bone index table
             Util.WriteOffset(writer, 0x10);
 
-            for (int i = 0; i < FullWeightList.Count; i++)
-                writer.Write((short)FlatHierarchy.IndexOf(BonesWithGeometry[i]));
+            // Write bone index table
+            for (int i = 0; i < partialWeightList.Count; i++)
+            {
+                for (int j = 0; j < partialWeightList[i].BoneIndexes.Count; j++)
+                    writer.Write((short)(partialWeightList[i].BoneIndexes[j]));
+            }
 
-            for (int i = 0; i < PartialWeightList.Count; i++)
+            // Write offset to weight table
+            Util.WriteOffset(writer, 0x14);
+
+            // Write weight table
+            foreach (Weight weight in partialWeightList)
+            {
+                for (int i = 0; i < weight.BoneWeights.Count; i++)
+                    writer.Write(weight.BoneWeights[i]);
+            }
+
+            // Write offset to inverse matrix table
+            Util.WriteOffset(writer, 0x18);
+
+            // Write inverse bind matrix table
+            foreach (Matrix4 mat in InverseBindMatrices)
+            {
+                // BMD stores the matrices as 3x4, so we discard the last row
+                writer.Write(mat.M11);
+                writer.Write(mat.M12);
+                writer.Write(mat.M13);
+                writer.Write(mat.M14);
+
+                writer.Write(mat.M21);
+                writer.Write(mat.M22);
+                writer.Write(mat.M23);
+                writer.Write(mat.M24);
+
+                writer.Write(mat.M31);
+                writer.Write(mat.M32);
+                writer.Write(mat.M33);
+                writer.Write(mat.M34);
+            }
+
+            Util.PadStreamWithString(writer, 32);
+
+            // Write chunk size
+            Util.WriteOffset(writer, 4);
+        }
+
+        /// <summary>
+        /// Outputs a DRW1 section to the specified stream.
+        /// </summary>
+        /// <param name="writer">Stream to write DRW1 to</param>
+        public void WriteDRW1(EndianBinaryWriter writer)
+        {
+            // Header
+            writer.Write("DRW1".ToCharArray()); // FourCC, "DRW1"
+            writer.Write(0); // Placeholder for chunk size
+            writer.Write((short)(AllDrw1Weights.Count)); // Number of elements
+            writer.Write((ushort)0xFFFF); // Padding
+            writer.Write(0x14); // Offset to bool table, it's constant
+            writer.Write(0); // Placeholder for index table offset
+
+            // Write false bools for full weights
+            for (int i = 0; i < fullWeightList.Count; i++)
+                writer.Write((byte)0);
+
+            // Write true bools for partial weights
+            for (int i = 0; i < partialWeightList.Count; i++)
+                writer.Write((byte)1);
+
+            // Write index table offset
+            Util.WriteOffset(writer, 0x10);
+
+            // Write bone indexes for full weights
+            for (int i = 0; i < fullWeightList.Count; i++)
+                writer.Write((short)fullWeightList[i].BoneIndexes[0]);
+
+            // Write EVP1 indexes for partial weights
+            for (int i = 0; i < partialWeightList.Count; i++)
                 writer.Write((short)i);
 
             Util.PadStreamWithString(writer, 32);
 
+            // Write chunk size
             Util.WriteOffset(writer, 4);
         }
     }

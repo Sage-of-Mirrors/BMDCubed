@@ -22,8 +22,8 @@ namespace BMDCubed.src.BMD.Geometry
 
             foreach (Grendgine_Collada_Triangles tri in mesh.Triangles)
             {
-                Batch batch = new Batch(tri);
-                Batches.Add(batch);
+                //Batch batch = new Batch(tri);
+                //Batches.Add(batch);
             }
 
             ActiveAttributesPerBatch = new List<VertexAttributes>[Batches.Count];

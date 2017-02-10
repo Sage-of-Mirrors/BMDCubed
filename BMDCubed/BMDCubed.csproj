@@ -88,7 +88,8 @@
     <Compile Include="src\BMD\Materials\Textures\TGA.cs" />
     <Compile Include="src\BMD\Skinning\Bone.cs" />
     <Compile Include="src\BMD\Skinning\DrawData.cs" />
-    <Compile Include="src\BMD\Skinning\Skeleton.cs" />
+    <Compile Include="src\BMD\Skinning\SkeletonData.cs" />
+    <Compile Include="src\BMD\Skinning\SkinningManager.cs" />
     <Compile Include="src\BMD\Skinning\Weight.cs" />
     <Compile Include="src\BoundingBox.cs" />
     <Compile Include="src\Util.cs" />

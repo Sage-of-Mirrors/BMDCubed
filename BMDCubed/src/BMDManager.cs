@@ -13,12 +13,14 @@ namespace BMDCubed.src
 {
     class BMDManager
     {
-        public Skeleton Skeleton;
+        public SkinningManager Skeleton1;
+        public SkeletonData Skeleton;
         public GeometryManager Geometry;
 
         public BMDManager(Grendgine_Collada scene)
         {
-            Skeleton = new Skeleton(scene);
+            //Skeleton = new SkeletonData(scene);
+            Skeleton1 = new SkinningManager(scene);
             Geometry = new GeometryManager(scene);
             Skeleton.AssignBoneBoundingBoxes(Geometry.VertexData.Positions);
         }

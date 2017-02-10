@@ -9,7 +9,7 @@ using GameFormatReader.Common;
 
 namespace BMDCubed.src.BMD.Skinning
 {
-    class Skeleton
+    class SkeletonData
     {
         /// <summary>
         /// The root of the skeleton's hierarchy.
@@ -38,17 +38,10 @@ namespace BMDCubed.src.BMD.Skinning
 
         public DrawData drw1Data;
 
-        public Skeleton(Grendgine_Collada scene)
+        public SkeletonData(Grendgine_Collada scene)
         {
-            boneNameList = new List<string>();
-            inverseBindMatrices = new List<Matrix4>();
-            weights = new List<float>();
-            vertexBoneIndexPairs = new List<int>();
-            vertexWeightCounts = new List<int>();
             FlatHierarchy = new List<Bone>();
             BonesWithGeometry = new List<Bone>();
-            VertexWeights = new List<Weight>();
-            MultiBoneWeights = new List<Weight>();
 
             SkeletonRoot = new Bone(GetSkeletonFromVisualScene(scene));
 
@@ -70,18 +63,6 @@ namespace BMDCubed.src.BMD.Skinning
                 }
             }
 
-            // Get vertex weights, vertex/bone pairs, and vertex weight counts
-            if (skin.Vertex_Weights != null)
-            {
-                foreach (Grendgine_Collada_Input_Unshared input in skin.Vertex_Weights.Input)
-                {
-                    if (input.Semantic == Grendgine_Collada_Input_Semantic.WEIGHT)
-                    {
-                        GetWeightsFromSkin(input.source.Remove(0, 1), skin);
-                    }
-                }
-            }
-
             Dictionary<string, Matrix4> matrixDict = new Dictionary<string, Matrix4>();
 
             for (int i = 0; i < boneNameList.Count; i++)
@@ -98,33 +79,6 @@ namespace BMDCubed.src.BMD.Skinning
             // We'll make another list that contains just the bones with geometry from boneNameList, in order,
             // so that the vertex weights and bone assignments can be used correctly.
             MakeBoneGeometryList();
-            List<Bone> testList = new List<Bone>();
-
-            int offset = 0;
-            for (int i = 0; i < vertexWeightCounts.Count; i++)
-            {
-                int numWeights = vertexWeightCounts[i];
-                Weight weight = new Weight();
-
-                while (numWeights != 0)
-                {
-                    Bone bone = BonesWithGeometry[vertexBoneIndexPairs[offset++]];
-                    float weightVal = weights[vertexBoneIndexPairs[offset++]];
-
-                    weight.AddBoneWeight((short)FlatHierarchy.IndexOf(bone), weightVal);
-
-                    numWeights--;
-                }
-
-                if ((weight.BoneIndexes.Count) > 1)
-                    MultiBoneWeights.Add(weight);
-                if ((weight.BoneWeights.Count == 1) && (!testList.Contains(FlatHierarchy[weight.BoneIndexes[0]])))
-                    testList.Add(FlatHierarchy[weight.BoneIndexes[0]]);
-
-                VertexWeights.Add(weight);
-            }
-
-            drw1Data = new DrawData(VertexWeights, FlatHierarchy, BonesWithGeometry);
         }
 
         private Grendgine_Collada_Node GetSkeletonFromVisualScene(Grendgine_Collada scene)
@@ -244,23 +198,6 @@ namespace BMDCubed.src.BMD.Skinning
             }
         }
 
-        private void GetWeightsFromSkin(string source, Grendgine_Collada_Skin skin)
-        {
-            foreach (Grendgine_Collada_Source src in skin.Source)
-            {
-                if (src.ID == source)
-                {
-                    // The library stores the weights in a string with \n's in it. So we trim those out and
-                    // get the raw float data to convert to a float array, which we then add to the weight list.
-                    string weightsFixed = src.Float_Array.Value_As_String.Replace('\n', ' ').Trim();
-                    weights.AddRange(grendgine_collada.Grendgine_Collada_Parse_Utils.String_To_Float(weightsFixed));
-
-                    vertexBoneIndexPairs.AddRange(skin.Vertex_Weights.V.Value());
-                    vertexWeightCounts.AddRange(skin.Vertex_Weights.VCount.Value());
-                }
-            }
-        }
-
         private void WriteBoneStringTable(EndianBinaryWriter writer)
         {
             List<char> stringBank = new List<char>();
@@ -293,73 +230,6 @@ namespace BMDCubed.src.BMD.Skinning
                     }
                 }
             }
-        }
-
-        public void WriteEVP1(EndianBinaryWriter writer)
-        {
-            writer.Write("EVP1".ToCharArray()); // FourCC, "EVP1"
-            writer.Write((int)0); // Placeholder for size
-            writer.Write((short)0); // Placeholder for index count
-            writer.Write((short)-1); // Padding for header
-
-            writer.Write((int)0x1C); // Offset to index count section, always 0x1C
-            writer.Write((int)0); // Placeholder for index data offset
-            writer.Write((int)0); // Placeholder for weight data offset
-            writer.Write((int)0); // Placeholder for inverse bind matrix offset
-
-            int indexCount = 0;
-
-            for (int i = 0; i < VertexWeights.Count; i++)
-            {
-                // We only care about vertex weights that have more than 1 weight to them
-                if (VertexWeights[i].BoneIndexes.Count == 1)
-                    continue;
-
-                indexCount++;
-                writer.Write((byte)VertexWeights[i].BoneIndexes.Count);
-            }
-
-            writer.Seek(8, System.IO.SeekOrigin.Begin);
-            writer.Write((short)indexCount); // Write index count
-
-            Util.WriteOffset(writer, 0x10);
-
-            for (int i = 0; i < VertexWeights.Count; i++)
-            {
-                // We only care about vertex weights that have more than 1 weight to them
-                if (VertexWeights[i].BoneIndexes.Count == 1)
-                    continue;
-
-                for (int j = 0; j < VertexWeights[i].BoneIndexes.Count; j++)
-                {
-                    writer.Write(VertexWeights[i].BoneIndexes[j]);
-                }
-            }
-
-            Util.WriteOffset(writer, 0x14);
-
-            for (int i = 0; i < VertexWeights.Count; i++)
-            {
-                // We only care about vertex weights that have more than 1 weight to them
-                if (VertexWeights[i].BoneIndexes.Count == 1)
-                    continue;
-
-                for (int j = 0; j < VertexWeights[i].BoneWeights.Count; j++)
-                {
-                    writer.Write(VertexWeights[i].BoneWeights[j]);
-                }
-            }
-
-            Util.WriteOffset(writer, 0x18);
-
-            foreach (Bone bone in FlatHierarchy)
-            {
-                bone.WriteInvMatrix(writer);
-            }
-
-            Util.PadStreamWithString(writer, 32);
-
-            Util.WriteOffset(writer, 4);
         }
 
         public void WriteJNT1(EndianBinaryWriter writer)

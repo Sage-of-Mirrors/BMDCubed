@@ -23,9 +23,7 @@ namespace BMDCubed.src.BMD.Skinning
         public BoundingBox Bounds;
 
         public string Name;
-
         public Matrix4 InverseBindMatrix;
-
         public List<Bone> Children;
 
         public Bone(Grendgine_Collada_Node node)
