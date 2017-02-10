@@ -12,6 +12,7 @@ namespace BMDCubed.src.BMD.Geometry
     class GeometryManager
     {
         public VertexData VertexData;
+        public BatchData BatchData;
 
         /// <summary>
         /// Creates an instance of GeometryManager and loads the geometry data from it.
@@ -32,6 +33,8 @@ namespace BMDCubed.src.BMD.Geometry
             foreach (Grendgine_Collada_Geometry geom in scene.Library_Geometries.Geometry)
             {
                 VertexData = new VertexData(geom.Mesh, position, normal, uv, color);
+                BatchData = new BatchData(geom.Mesh);
+                BatchData.SetBoundingBoxes(VertexData.Positions);
             }
         }
     }

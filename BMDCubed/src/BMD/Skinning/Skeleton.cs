@@ -36,6 +36,8 @@ namespace BMDCubed.src.BMD.Skinning
         List<Weight> VertexWeights;
         List<Weight> MultiBoneWeights;
 
+        public DrawData drw1Data;
+
         public Skeleton(Grendgine_Collada scene)
         {
             boneNameList = new List<string>();
@@ -121,6 +123,8 @@ namespace BMDCubed.src.BMD.Skinning
 
                 VertexWeights.Add(weight);
             }
+
+            drw1Data = new DrawData(VertexWeights, FlatHierarchy, BonesWithGeometry);
         }
 
         private Grendgine_Collada_Node GetSkeletonFromVisualScene(Grendgine_Collada scene)
@@ -352,34 +356,6 @@ namespace BMDCubed.src.BMD.Skinning
             {
                 bone.WriteInvMatrix(writer);
             }
-
-            Util.PadStreamWithString(writer, 32);
-
-            Util.WriteOffset(writer, 4);
-        }
-
-        public void WriteDRW1(EndianBinaryWriter writer)
-        {
-            writer.Write("DRW1".ToCharArray()); // FourCC, "DRW1"
-            writer.Write(0); // Placeholder for chunk size
-            writer.Write((short)(BonesWithGeometry.Count + MultiBoneWeights.Count));
-            writer.Write((ushort)0xFFFF); // Padding
-            writer.Write(0x14); // Offset to bool table, it's constant
-            writer.Write(0); // Placeholder for index offset
-
-            for (int i = 0; i < BonesWithGeometry.Count; i++)
-                writer.Write((byte)0);
-
-            for (int i = 0; i < MultiBoneWeights.Count; i++)
-                writer.Write((byte)1);
-
-            Util.WriteOffset(writer, 0x10);
-
-            for (int i = 0; i < BonesWithGeometry.Count; i++)
-                writer.Write((short)FlatHierarchy.IndexOf(BonesWithGeometry[i]));
-
-            for (int i = 0; i < MultiBoneWeights.Count; i++)
-                writer.Write((short)i);
 
             Util.PadStreamWithString(writer, 32);
 
