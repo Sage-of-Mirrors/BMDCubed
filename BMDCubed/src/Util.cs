@@ -103,5 +103,30 @@ namespace BMDCubed.src
 
             return pitchYawRoll;
         }
+
+        public static Vector3 ToEulerianAngles(Quaternion q)
+        {
+            Vector3 vec = new Vector3();
+
+            float ysqr = q.Y * q.Y;
+
+            float t0 = 2.0f * (q.W * q.X + q.Y * q.Z);
+            float t1 = 1.0f - 2.0f * (q.X * q.X + ysqr);
+
+            vec.X = (float)Math.Atan2(t0, t1);
+
+            float t2 = 2.0f * (q.W * q.Y - q.Z * q.X);
+            t2 = t2 > 1.0f ? 1.0f : t2;
+            t2 = t2 < -1.0f ? -1.0f : t2;
+
+            vec.Y = (float)Math.Asin(t2);
+
+            float t3 = 2.0f * (q.W * q.Z + q.X * q.Y);
+            float t4 = 1.0f - 2.0f * (ysqr + q.Z * q.Z);
+
+            vec.Z = (float)Math.Atan2(t3, t4);
+
+            return vec;
+        }
     }
 }

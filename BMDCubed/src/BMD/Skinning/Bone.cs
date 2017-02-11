@@ -48,7 +48,7 @@ namespace BMDCubed.src.BMD.Skinning
 
             Scale = transform.ExtractScale();
             Translation = transform.ExtractTranslation();
-            //Rotation = transform.ExtractRotation();
+            Rotation = transform.ExtractRotation();
 
             if (node.node == null)
                 return;
@@ -91,7 +91,7 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Write(Scale.Y);
             writer.Write(Scale.Z);
 
-            Vector3 euler = Util.ToEulerAngles(Rotation);
+            Vector3 euler = Util.ToEulerianAngles(Rotation);
             writer.Write((short)((Util.RadsToDegrees(euler.X) * 32767.0f) / 180.0f));
             writer.Write((short)((Util.RadsToDegrees(euler.Y) * 32767.0f) / 180.0f));
             writer.Write((short)((Util.RadsToDegrees(euler.Z) * 32767.0f) / 180.0f));
@@ -112,6 +112,7 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Write((short)1);
             writer.Write((short)0);
 
+            
             foreach (Material mat in Materials)
             {
                 writer.Write((short)0x11);
@@ -123,17 +124,14 @@ namespace BMDCubed.src.BMD.Skinning
                 writer.Write((short)0x12);
                 writer.Write((short)batches.IndexOf(mat.MatBatch));
 
-                writer.Write((short)2);
+                writer.Write((short)1);
                 writer.Write((short)0);
-
-                //writer.Write((short)2);
-                //writer.Write((short)0);
             }
 
             foreach (Bone bone in Children)
                 bone.WriteScenegraphRecursive(writer, bones, batches, materials);
 
-            for (int i = 0; i > Children.Count; i++)
+            for (int i = 0; i < Materials.Count * 2; i++)
             {
                 writer.Write((short)2);
                 writer.Write((short)0);

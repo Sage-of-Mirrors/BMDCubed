@@ -123,9 +123,6 @@ namespace BMDCubed.src
             Skeleton.SkelData.SkeletonRoot.Materials = Materials.Materials;
             Skeleton.SkelData.SkeletonRoot.WriteScenegraphRecursive(writer, Skeleton.SkelData.FlatHierarchy, Geometry.BatchData.Batches, Materials.Materials);
 
-            writer.Write((short)2);
-            writer.Write((short)0);
-
             writer.Write((short)0);
             writer.Write((short)0);
 
