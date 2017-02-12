@@ -30,6 +30,8 @@ namespace BMDCubed.src.BMD.Skinning
         public List<Material> Materials;
         private Matrix4 transform;
 
+        public Bone Parent;
+
         public Bone(Grendgine_Collada_Node node)
         {
             Children = new List<Bone>();
@@ -42,9 +44,9 @@ namespace BMDCubed.src.BMD.Skinning
 
             float[] nodeTransform = node.Matrix[0].Value();
             transform = new Matrix4(nodeTransform[0], nodeTransform[4], nodeTransform[8], nodeTransform[12],
-                                            nodeTransform[1], nodeTransform[5], nodeTransform[9], nodeTransform[13],
-                                            nodeTransform[2], nodeTransform[6], nodeTransform[10], nodeTransform[14],
-                                            nodeTransform[3], nodeTransform[7], nodeTransform[11], nodeTransform[15]);
+                                    nodeTransform[1], nodeTransform[5], nodeTransform[9], nodeTransform[13],
+                                    nodeTransform[2], nodeTransform[6], nodeTransform[10], nodeTransform[14],
+                                    nodeTransform[3], nodeTransform[7], nodeTransform[11], nodeTransform[15]);
 
             Scale = transform.ExtractScale();
             Translation = transform.ExtractTranslation();
@@ -72,12 +74,13 @@ namespace BMDCubed.src.BMD.Skinning
                 bone.GetInverseBindMatrixRecursive(matrixList);
         }
 
-        public void FlattenHierarchy(List<Bone> boneList)
+        public void FlattenHierarchy(List<Bone> boneList, Bone parent)
         {
             boneList.Add(this);
+            Parent = parent;
 
             foreach (Bone bone in Children)
-                bone.FlattenHierarchy(boneList);
+                bone.FlattenHierarchy(boneList, this);
         }
 
         public void WriteBone(EndianBinaryWriter writer)

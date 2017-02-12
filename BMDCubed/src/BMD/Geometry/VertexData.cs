@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using grendgine_collada;
 using GameFormatReader.Common;
 using OpenTK;
+using System.IO;
 
 namespace BMDCubed.src.BMD.Geometry
 {
@@ -70,6 +71,26 @@ namespace BMDCubed.src.BMD.Geometry
             PositionFractionalBitVal = GetFractionalVec3(Positions);
             NormalFractionalBitVal = GetFractionalVec3(Normals);
             UVFractionalBitVal = 15;
+
+            StringBuilder bld = new StringBuilder();
+
+            foreach (Vector3 vec in Positions)
+                bld.AppendLine(vec.ToString());
+            File.WriteAllText(@"D:\vertex.txt", bld.ToString());
+
+            foreach (List<Vector2> list2 in UVData)
+            {
+                if (list2 != null)
+                {
+                    for (int i = 0; i < list2.Count; i++)
+                    {
+                        Vector2 vec = list2[i];
+                        vec.X = 1 - vec.X;
+                        vec.Y = 1 - vec.Y;
+                        list2[i] = vec;
+                    }
+                }
+            }
         }
 
         public void WriteVTX1(EndianBinaryWriter writer)

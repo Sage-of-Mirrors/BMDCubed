@@ -163,12 +163,16 @@ namespace BMDCubed.src.BMD.Geometry
             // Write matrix info offset
             Util.WriteOffset(writer, 0x24);
 
+            int matrixIndexCount = 0;
+
             // Write matrix info
             foreach (Batch bat in Batches)
             {
                 writer.Write((short)1);
-                writer.Write((short)bat.WeightIndexes.Count);
-                writer.Write(Batches.IndexOf(bat));
+                writer.Write((ushort)bat.WeightIndexes.Count);
+                writer.Write(matrixIndexCount);
+
+                matrixIndexCount += bat.WeightIndexes.Count;
             }
 
             // Write packet info offset

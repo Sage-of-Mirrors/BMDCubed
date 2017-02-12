@@ -78,6 +78,9 @@ namespace BMDCubed.src.BMD.Skinning
                     float weightVal = weightData[bonePairs[offset]];
                     offset++;
 
+                    if (numWeights == 1 && weightVal != 1.0f)
+                        weightVal = 1.0f;
+
                     weight.AddBoneWeight((short)flat.IndexOf(bone), weightVal);
                 }
 
@@ -168,6 +171,13 @@ namespace BMDCubed.src.BMD.Skinning
             // Write inverse bind matrix table
             foreach (Matrix4 mat in InverseBindMatrices)
             {
+                Vector3 trans = mat.ExtractTranslation();
+                Vector3 scale = mat.ExtractScale();
+                Quaternion rot = mat.ExtractRotation();
+
+                //Matrix3x4 mat3
+
+                
                 // BMD stores the matrices as 3x4, so we discard the last row
                 writer.Write(mat.M11);
                 writer.Write(mat.M12);
@@ -180,7 +190,7 @@ namespace BMDCubed.src.BMD.Skinning
                 writer.Write(mat.M24);
 
                 writer.Write(mat.M31);
-                writer.Write(mat.M32);
+                writer.Write(mat.M31);
                 writer.Write(mat.M33);
                 writer.Write(mat.M34);
             }

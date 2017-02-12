@@ -56,7 +56,8 @@ namespace BMDCubed.src.BMD.Skinning
             SkeletonRoot.GetInverseBindMatrixRecursive(matrixDict);
 
             // Flatten hierarchy for easy access later
-            SkeletonRoot.FlattenHierarchy(FlatHierarchy);
+            SkeletonRoot.FlattenHierarchy(FlatHierarchy, null);
+            //GetInvBindMatricesFromHierarchy();
 
             // We'll make another list that contains just the bones with geometry from boneNameList, in order,
             // so that the vertex weights and bone assignments can be used correctly.
@@ -156,14 +157,49 @@ namespace BMDCubed.src.BMD.Skinning
 
                     for (int i = 0; i < matrixSrc.Length; i += 16)
                     {
-                        Matrix4 invBind = new Matrix4(matrixSrc[i + 0], matrixSrc[i + 1], matrixSrc[i + 2], matrixSrc[i + 3],
+                        
+                        Matrix4 invBind = new Matrix4(matrixSrc[i + 0], matrixSrc[i + 4], matrixSrc[i + 8], matrixSrc[i + 12],
+                                                      matrixSrc[i + 1], matrixSrc[i + 5], matrixSrc[i + 9], matrixSrc[i + 13],
+                                                      matrixSrc[i + 2], matrixSrc[i + 6], matrixSrc[i + 10], matrixSrc[i + 14],
+                                                      matrixSrc[i + 3], matrixSrc[i + 7], matrixSrc[i + 11], matrixSrc[i + 15]);
+                                                      
+
+                        /*Matrix4 invBind = new Matrix4(matrixSrc[i + 0], matrixSrc[i + 1], matrixSrc[i + 2], matrixSrc[i + 3],
                                                       matrixSrc[i + 4], matrixSrc[i + 5], matrixSrc[i + 6], matrixSrc[i + 7],
                                                       matrixSrc[i + 8], matrixSrc[i + 9], matrixSrc[i + 10], matrixSrc[i + 11],
                                                       matrixSrc[i + 12], matrixSrc[i + 13], matrixSrc[i + 14], matrixSrc[i + 15]);
-
+                                                      */
+                                                       
                         inverseBindMatrices.Add(invBind);
                     }
                 }
+            }
+        }
+
+        private void GetInvBindMatricesFromHierarchy()
+        {
+            for (int i = 0; i < FlatHierarchy.Count; i++)
+            {
+                Bone curJnt, origJnt;
+                curJnt = origJnt = FlatHierarchy[i];
+
+                Matrix4 cumulative = Matrix4.Identity;
+
+                while (true)
+                {
+                    Matrix4 jointMatrix = Matrix4.CreateScale(curJnt.Scale) *
+                                          Matrix4.CreateFromQuaternion(curJnt.Rotation) *
+                                          Matrix4.CreateTranslation(curJnt.Translation);
+
+                    cumulative *= jointMatrix;
+                    if (curJnt.Parent == null)
+                        break;
+
+                    curJnt = curJnt.Parent;
+                }
+
+                origJnt.InverseBindMatrix = cumulative.Inverted();
+                origJnt.InverseBindMatrix.Transpose();
             }
         }
 

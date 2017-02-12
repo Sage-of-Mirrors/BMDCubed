@@ -115,7 +115,7 @@ namespace BMDCubed.src
             writer.Write("INF1".ToCharArray()); // FourCC, "INF1"
             writer.Write(0); // Placeholder for chunk size
             writer.Write((short)1); // Unknown. It's 1?
-            writer.Write((short)0xFF); // Padding
+            writer.Write((ushort)0xFFFF); // Padding
             writer.Write(Geometry.BatchData.Batches.Count); // Number of packets
             writer.Write(Geometry.VertexData.Positions.Count); // Number of vertexes
             writer.Write(0x18); // Offset to hierarchy data. Always 0x18

@@ -75,6 +75,11 @@ namespace BMDCubed.src.BMD.Geometry
                         PositionIndex.Add(positionIndex);
                         VertIndexes.Add((short)positionIndex);
 
+                        if (drw1.AllWeights[positionIndex].BoneIndexes.Count > 1)
+                        {
+
+                        }
+
                         WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
                     }
                     else
@@ -83,7 +88,7 @@ namespace BMDCubed.src.BMD.Geometry
                     }
                 }
 
-                VertIndexes.Add((short)(WeightIndexes.Count - 1));
+                VertIndexes.Add((short)((WeightIndexes.Count - 1) * 3));
             }
 
             ActiveAttributes.Add(VertexAttributes.PositionMatrixIndex);
@@ -128,7 +133,7 @@ namespace BMDCubed.src.BMD.Geometry
             writer.Write((ushort)numVerts);
 
             for (int i = 0; i < VertIndexes.Count; i++)
-                writer.Write(VertIndexes[i]);
+                writer.Write((ushort)VertIndexes[i]);
 
             Util.PadStreamWithZero(writer, 8);
         }
