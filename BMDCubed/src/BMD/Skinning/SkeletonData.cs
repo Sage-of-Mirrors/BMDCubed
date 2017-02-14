@@ -18,6 +18,8 @@ namespace BMDCubed.src.BMD.Skinning
         List<string> boneNameList;
         List<Matrix4> inverseBindMatrices;
 
+        public Matrix4 BindShapeMatrix;
+
         public SkeletonData(Grendgine_Collada scene, Grendgine_Collada_Skin skin)
         {
             FlatHierarchy = new List<Bone>();
@@ -25,6 +27,14 @@ namespace BMDCubed.src.BMD.Skinning
 
             boneNameList = new List<string>();
             inverseBindMatrices = new List<Matrix4>();
+
+            string bindShape = skin.Bind_Shape_Matrix.Value_As_String.Replace('\n', ' ').Trim();
+            float[] matrixSrc = Grendgine_Collada_Parse_Utils.String_To_Float(bindShape);
+
+            BindShapeMatrix = new Matrix4(matrixSrc[0], matrixSrc[4], matrixSrc[8], matrixSrc[12],
+                                          matrixSrc[1], matrixSrc[5], matrixSrc[9], matrixSrc[13],
+                                          matrixSrc[2], matrixSrc[6], matrixSrc[10], matrixSrc[14],
+                                          matrixSrc[3], matrixSrc[7], matrixSrc[11], matrixSrc[15]);
 
             // Get the skeleton's root from the visual scene
             SkeletonRoot = new Bone(GetSkeletonFromVisualScene(scene));
@@ -141,14 +151,15 @@ namespace BMDCubed.src.BMD.Skinning
                                                       matrixSrc[i + 1], matrixSrc[i + 5], matrixSrc[i + 9], matrixSrc[i + 13],
                                                       matrixSrc[i + 2], matrixSrc[i + 6], matrixSrc[i + 10], matrixSrc[i + 14],
                                                       matrixSrc[i + 3], matrixSrc[i + 7], matrixSrc[i + 11], matrixSrc[i + 15]);
-                                                      
+
 
                         /*Matrix4 invBind = new Matrix4(matrixSrc[i + 0], matrixSrc[i + 1], matrixSrc[i + 2], matrixSrc[i + 3],
                                                       matrixSrc[i + 4], matrixSrc[i + 5], matrixSrc[i + 6], matrixSrc[i + 7],
                                                       matrixSrc[i + 8], matrixSrc[i + 9], matrixSrc[i + 10], matrixSrc[i + 11],
                                                       matrixSrc[i + 12], matrixSrc[i + 13], matrixSrc[i + 14], matrixSrc[i + 15]);
                                                       */
-                                                       
+
+                        invBind.Normalize();
                         inverseBindMatrices.Add(invBind);
                     }
                 }

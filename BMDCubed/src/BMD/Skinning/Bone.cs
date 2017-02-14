@@ -49,8 +49,8 @@ namespace BMDCubed.src.BMD.Skinning
                                     nodeTransform[3], nodeTransform[7], nodeTransform[11], nodeTransform[15]);
 
             Scale = transform.ExtractScale();
-            Translation = transform.ExtractTranslation();
             Rotation = transform.ExtractRotation();
+            Translation = transform.ExtractTranslation();
 
             if (node.node == null)
                 return;

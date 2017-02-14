@@ -46,7 +46,7 @@ namespace BMDCubed.src.BMD.Skinning
 
             // We'll rip the inverse bind matrices from the hierarchy so we can
             // use them to write the EVP1 chunk later
-            foreach (Bone bone in geom)
+            foreach (Bone bone in flat)
                 InverseBindMatrices.Add(bone.InverseBindMatrix);
         }
 
@@ -172,26 +172,28 @@ namespace BMDCubed.src.BMD.Skinning
                 Vector3 scale = mat.ExtractScale();
                 Quaternion rot = mat.ExtractRotation();
 
-                Matrix3x4 ident = new Matrix3x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+                Matrix3x4 test = Matrix3x4.CreateScale(scale) *
+                                 Matrix3x4.CreateFromQuaternion(rot) *
+                                 Matrix3x4.CreateTranslation(trans);
                 //Matrix3x4 mat3 = Matrix3x4.Mult(InverseBindMatrices, ident);
 
 
                 // BMD stores the matrices as 3x4, so we discard the last row
                 /*
-                writer.Write(mat.M11);
-                writer.Write(mat.M21);
-                writer.Write(mat.M31);
-                writer.Write(mat.M41);
+                writer.Write(test.M11);
+                writer.Write(test.M12);
+                writer.Write(test.M13);
+                writer.Write(test.M14);
 
-                writer.Write(mat.M12);
-                writer.Write(mat.M22);
-                writer.Write(mat.M32);
-                writer.Write(mat.M42);
+                writer.Write(test.M21);
+                writer.Write(test.M22);
+                writer.Write(test.M23);
+                writer.Write(test.M24);
 
-                writer.Write(mat.M13);
-                writer.Write(mat.M23);
-                writer.Write(mat.M33);
-                writer.Write(mat.M43);
+                writer.Write(test.M31);
+                writer.Write(test.M32);
+                writer.Write(test.M33);
+                writer.Write(test.M34);
                 */
 
                 

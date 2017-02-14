@@ -49,7 +49,7 @@ namespace BMDCubed.src.BMD.Geometry
 
         Dictionary<VertexAttributes, string> activeAttributes;
 
-        public VertexData(Grendgine_Collada_Mesh mesh, DataTypes position = DataTypes.F32, DataTypes normal = DataTypes.F32,
+        public VertexData(Grendgine_Collada_Mesh mesh, Matrix4 bindShape, DataTypes position = DataTypes.F32, DataTypes normal = DataTypes.F32,
             DataTypes uv = DataTypes.F32, ColorDataTypes color = ColorDataTypes.RGB8)
         {
             Vertices = new List<Vertex>();
@@ -77,6 +77,11 @@ namespace BMDCubed.src.BMD.Geometry
             foreach (Vector3 vec in Positions)
                 bld.AppendLine(vec.ToString());
             File.WriteAllText(@"D:\vertex.txt", bld.ToString());
+
+            for (int i = 0; i < Positions.Count; i++)
+            {
+                Positions[i] = Vector3.TransformVector(Positions[i], bindShape);
+            }
 
             foreach (List<Vector2> list2 in UVData)
             {

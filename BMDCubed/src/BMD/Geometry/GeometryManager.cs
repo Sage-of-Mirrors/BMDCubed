@@ -23,7 +23,7 @@ namespace BMDCubed.src.BMD.Geometry
         /// <param name="normal">Datatype to use for normal data</param>
         /// <param name="uv">Datatype to use for UV data</param>
         /// <param name="color">Datatype to use for color data</param>
-        public GeometryManager(Grendgine_Collada scene, DrawData drw1, DataTypes position = DataTypes.F32, DataTypes normal = DataTypes.F32, 
+        public GeometryManager(Grendgine_Collada scene, DrawData drw1, Matrix4 bindShape, DataTypes position = DataTypes.F32, DataTypes normal = DataTypes.F32, 
             DataTypes uv = DataTypes.F32, ColorDataTypes color = ColorDataTypes.RGB8)
         {
             if (scene.Library_Geometries == null)
@@ -33,7 +33,7 @@ namespace BMDCubed.src.BMD.Geometry
 
             foreach (Grendgine_Collada_Geometry geom in scene.Library_Geometries.Geometry)
             {
-                VertexData = new VertexData(geom.Mesh, position, normal, uv, color);
+                VertexData = new VertexData(geom.Mesh, bindShape, position, normal, uv, color);
                 BatchData = new BatchData(geom.Mesh, drw1);
                 BatchData.SetBoundingBoxes(VertexData.Positions);
             }

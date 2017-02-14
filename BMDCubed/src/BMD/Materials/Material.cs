@@ -327,9 +327,9 @@ namespace BMDCubed.Materials
                 }
             }
 
+            TevStages[0].ColorIn[0] = GXCombineColorInput.TexColor;
             TevStages[0].ColorIn[1] = GXCombineColorInput.TexColor;
-            TevStages[0].ColorIn[2] = GXCombineColorInput.TexColor;
-            TevStages[0].AlphaIn[1] = GXCombineAlphaInput.TexAlpha;
+            TevStages[0].AlphaIn[0] = GXCombineAlphaInput.TexAlpha;
         }
 
         private bool HasAlpha(Bitmap source)
