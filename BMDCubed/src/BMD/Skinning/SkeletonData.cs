@@ -116,31 +116,10 @@ namespace BMDCubed.src.BMD.Skinning
             foreach (Grendgine_Collada_Source src in skin.Source)
             {
                 if (src.ID == source)
-                {
-                    boneNameList.AddRange(src.Name_Array.Value());
+                 {
+                    string names = src.Name_Array.Value_Pre_Parse.Replace('\n', ' ').Trim();
 
-                    for (int i = 0; i < boneNameList.Count; i++)
-                    {
-                        if (boneNameList[i] == "\n")
-                        {
-                            boneNameList.RemoveAt(i);
-                            i--;
-                        }
-                        else if (boneNameList[i].Contains("\n"))
-                        {
-                            string[] tempEndLine = boneNameList[i].Split('\n');
-
-                            boneNameList.RemoveAt(i);
-
-                            for (int j = 0; j < tempEndLine.Length; j++)
-                            {
-                                boneNameList.Insert(i, tempEndLine[j]);
-                                i++;
-                            }
-
-                            i--;
-                        }
-                    }
+                    boneNameList.AddRange(names.Split(' '));
                 }
             }
         }

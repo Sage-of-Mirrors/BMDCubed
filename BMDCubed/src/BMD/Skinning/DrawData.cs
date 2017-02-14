@@ -46,7 +46,7 @@ namespace BMDCubed.src.BMD.Skinning
 
             // We'll rip the inverse bind matrices from the hierarchy so we can
             // use them to write the EVP1 chunk later
-            foreach (Bone bone in flat)
+            foreach (Bone bone in geom)
                 InverseBindMatrices.Add(bone.InverseBindMatrix);
         }
 
@@ -77,9 +77,6 @@ namespace BMDCubed.src.BMD.Skinning
 
                     float weightVal = weightData[bonePairs[offset]];
                     offset++;
-
-                    if (numWeights == 1 && weightVal != 1.0f)
-                        weightVal = 1.0f;
 
                     weight.AddBoneWeight((short)flat.IndexOf(bone), weightVal);
                 }
@@ -152,7 +149,7 @@ namespace BMDCubed.src.BMD.Skinning
             for (int i = 0; i < partialWeightList.Count; i++)
             {
                 for (int j = 0; j < partialWeightList[i].BoneIndexes.Count; j++)
-                    writer.Write((short)(partialWeightList[i].BoneIndexes[j]));
+                    writer.Write((ushort)(partialWeightList[i].BoneIndexes[j]));
             }
 
             // Write offset to weight table
@@ -175,24 +172,48 @@ namespace BMDCubed.src.BMD.Skinning
                 Vector3 scale = mat.ExtractScale();
                 Quaternion rot = mat.ExtractRotation();
 
-                //Matrix3x4 mat3
+                Matrix3x4 ident = new Matrix3x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+                //Matrix3x4 mat3 = Matrix3x4.Mult(InverseBindMatrices, ident);
+
+
+                // BMD stores the matrices as 3x4, so we discard the last row
+                /*
+                writer.Write(mat.M11);
+                writer.Write(mat.M21);
+                writer.Write(mat.M31);
+                writer.Write(mat.M41);
+
+                writer.Write(mat.M12);
+                writer.Write(mat.M22);
+                writer.Write(mat.M32);
+                writer.Write(mat.M42);
+
+                writer.Write(mat.M13);
+                writer.Write(mat.M23);
+                writer.Write(mat.M33);
+                writer.Write(mat.M43);
+                */
 
                 
-                // BMD stores the matrices as 3x4, so we discard the last row
-                writer.Write(mat.M11);
-                writer.Write(mat.M12);
-                writer.Write(mat.M13);
-                writer.Write(mat.M14);
+                Vector4 Row1 = mat.Row0;
+                Vector4 Row2 = mat.Row1;
+                Vector4 Row3 = mat.Row2;
 
-                writer.Write(mat.M21);
-                writer.Write(mat.M22);
-                writer.Write(mat.M23);
-                writer.Write(mat.M24);
+                writer.Write(Row1.X);
+                writer.Write(Row1.Y);
+                writer.Write(Row1.Z);
+                writer.Write(Row1.W);
 
-                writer.Write(mat.M31);
-                writer.Write(mat.M31);
-                writer.Write(mat.M33);
-                writer.Write(mat.M34);
+                writer.Write(Row2.X);
+                writer.Write(Row2.Y);
+                writer.Write(Row2.Z);
+                writer.Write(Row2.W);
+
+                writer.Write(Row3.X);
+                writer.Write(Row3.Y);
+                writer.Write(Row3.Z);
+                writer.Write(Row3.W);
+                
             }
 
             Util.PadStreamWithString(writer, 32);

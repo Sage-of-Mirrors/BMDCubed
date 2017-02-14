@@ -19,7 +19,6 @@ namespace BMDCubed.src.BMD.Geometry
 
         List<int> PositionIndex;
         public List<int> WeightIndexes;
-        List<int> VertexWeightIndexes;
         int numTris;
         int numVerts;
         public string MaterialName;
@@ -75,11 +74,6 @@ namespace BMDCubed.src.BMD.Geometry
                         PositionIndex.Add(positionIndex);
                         VertIndexes.Add((short)positionIndex);
 
-                        if (drw1.AllWeights[positionIndex].BoneIndexes.Count > 1)
-                        {
-
-                        }
-
                         WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
                     }
                     else
@@ -108,7 +102,7 @@ namespace BMDCubed.src.BMD.Geometry
 
         public void WriteBatch(EndianBinaryWriter writer, List<int> attributeOffsets, int thisIndex)
         {
-            writer.Write((byte)3);
+            writer.Write((byte)0);
             writer.Write((byte)0xFF);
             writer.Write((short)1);
 
