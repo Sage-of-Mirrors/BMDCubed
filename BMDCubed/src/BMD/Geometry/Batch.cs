@@ -86,6 +86,29 @@ namespace BMDCubed.src.BMD.Geometry
             }
 
             ActiveAttributes.Add(VertexAttributes.PositionMatrixIndex);
+
+            for (int i = 0; i < VertIndexes.Count; i += 3 * ActiveAttributes.Count)
+            {
+                SwapVertexes(i, i + (2 * ActiveAttributes.Count));
+            }
+        }
+
+        private void SwapVertexes(int vert1, int vert2)
+        {
+            int[] vertData1 = new int[ActiveAttributes.Count];
+            int[] vertData2 = new int[ActiveAttributes.Count];
+
+            for (int i = 0; i < ActiveAttributes.Count; i++)
+            {
+                vertData1[i] = VertIndexes[vert1 + i];
+                vertData2[i] = VertIndexes[vert2 + i];
+            }
+
+            for (int i = 0; i < ActiveAttributes.Count; i++)
+            {
+                VertIndexes[vert1 + i] = (short)vertData2[i];
+                VertIndexes[vert2 + i] = (short)vertData1[i];
+            }
         }
 
         public void GetBoundingBoxData(List<Vector3> posList)

@@ -276,16 +276,6 @@ namespace BMDCubed.src.BMD.Skinning
                     continue;
 
                 FlatHierarchy[i].Bounds = new BoundingBox(boneVerts[i]);
-
-                for (int j = 0; j < boneVerts[i].Count; j++)
-                {
-                    int test = verts.IndexOf(boneVerts[i][j]);
-
-                    if (test == -1)
-                        continue;
-
-                    verts[verts.IndexOf(boneVerts[i][j])] = Vector3.TransformPosition(boneVerts[i][j], FlatHierarchy[i].InverseBindMatrix.Inverted());
-                }
             }
         }
     }

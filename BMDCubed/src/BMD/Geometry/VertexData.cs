@@ -7,6 +7,7 @@ using grendgine_collada;
 using GameFormatReader.Common;
 using OpenTK;
 using System.IO;
+using BMDCubed.src.BMD.Skinning;
 
 namespace BMDCubed.src.BMD.Geometry
 {
@@ -80,7 +81,7 @@ namespace BMDCubed.src.BMD.Geometry
 
             for (int i = 0; i < Positions.Count; i++)
             {
-                Positions[i] = Vector3.TransformVector(Positions[i], bindShape);
+                Positions[i] = Vector3.TransformPosition(Positions[i], bindShape);
             }
 
             foreach (List<Vector2> list2 in UVData)
@@ -95,6 +96,23 @@ namespace BMDCubed.src.BMD.Geometry
                         list2[i] = vec;
                     }
                 }
+            }
+        }
+
+        public void TransformPositions(List<Weight> weights, List<Bone> bones)
+        {
+            for (int i = 0; i < Positions.Count; i++)
+            {
+                Weight weight = weights[i];
+                Matrix4 cumMat = Matrix4.Identity;
+
+                for (int b = 0; b < weight.BoneIndexes.Count; b++)
+                {
+                    Matrix4 invBind = bones[weight.BoneIndexes[b]].InverseBindMatrix;
+                    cumMat *= Matrix4.Mult(invBind, weight.BoneWeights[b]);
+                }
+
+                Positions[i] = Vector3.TransformPosition(Positions[i], cumMat);
             }
         }
 
