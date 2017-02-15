@@ -43,10 +43,18 @@ namespace BMDCubed.src.BMD.Skinning
             Unknown4 = 255;
 
             float[] nodeTransform = node.Matrix[0].Value();
+            
             transform = new Matrix4(nodeTransform[0], nodeTransform[4], nodeTransform[8], nodeTransform[12],
                                     nodeTransform[1], nodeTransform[5], nodeTransform[9], nodeTransform[13],
                                     nodeTransform[2], nodeTransform[6], nodeTransform[10], nodeTransform[14],
                                     nodeTransform[3], nodeTransform[7], nodeTransform[11], nodeTransform[15]);
+
+            /*
+            transform = new Matrix4(nodeTransform[0], nodeTransform[1], nodeTransform[2], nodeTransform[3],
+                                    nodeTransform[4], nodeTransform[5], nodeTransform[6], nodeTransform[7],
+                                    nodeTransform[8], nodeTransform[9], nodeTransform[10], nodeTransform[11],
+                                    nodeTransform[12], nodeTransform[13], nodeTransform[14], nodeTransform[15]);
+            */
 
             Scale = transform.ExtractScale();
             Rotation = transform.ExtractRotation();
@@ -67,7 +75,10 @@ namespace BMDCubed.src.BMD.Skinning
             foreach (KeyValuePair<string, Matrix4> mat in matrixList)
             {
                 if (mat.Key == Name)
+                {
                     InverseBindMatrix = mat.Value;
+                    //InverseBindMatrix.Transpose();
+                }
             }
 
             foreach (Bone bone in Children)
@@ -85,6 +96,10 @@ namespace BMDCubed.src.BMD.Skinning
 
         public void WriteBone(EndianBinaryWriter writer)
         {
+            var mat = transform * InverseBindMatrix;
+
+            Vector3 trans = transform.ExtractTranslation();
+
             writer.Write(Unknown1);
             writer.Write(Unknown2);
             writer.Write(Unknown3);
@@ -95,6 +110,10 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Write(Scale.Z);
 
             Vector3 euler = Util.ToEulerianAngles(Rotation);
+            Vector3 degrees = new Vector3(Util.RadsToDegrees(euler.X),
+                                          Util.RadsToDegrees(euler.Y),
+                                          Util.RadsToDegrees(euler.Z));
+            Quaternion quat = new Quaternion(euler);
             writer.Write((short)((Util.RadsToDegrees(euler.X) * 32767.0f) / 180.0f));
             writer.Write((short)((Util.RadsToDegrees(euler.Y) * 32767.0f) / 180.0f));
             writer.Write((short)((Util.RadsToDegrees(euler.Z) * 32767.0f) / 180.0f));
