@@ -84,6 +84,7 @@ namespace BMDCubed.src.BMD.Geometry
                 Positions[i] = Vector3.TransformPosition(Positions[i], bindShape);
             }
 
+            
             foreach (List<Vector2> list2 in UVData)
             {
                 if (list2 != null)
@@ -91,8 +92,7 @@ namespace BMDCubed.src.BMD.Geometry
                     for (int i = 0; i < list2.Count; i++)
                     {
                         Vector2 vec = list2[i];
-                        vec.X = 1 - vec.X;
-                        vec.Y = 1 - vec.Y;
+                        vec.Y = 1 - list2[i].Y;
                         list2[i] = vec;
                     }
                 }

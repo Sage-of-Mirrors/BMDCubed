@@ -125,7 +125,7 @@ namespace BMDCubed.src.BMD.Geometry
 
         public void WriteBatch(EndianBinaryWriter writer, List<int> attributeOffsets, int thisIndex)
         {
-            writer.Write((byte)0);
+            writer.Write((byte)3);
             writer.Write((byte)0xFF);
             writer.Write((short)1);
 

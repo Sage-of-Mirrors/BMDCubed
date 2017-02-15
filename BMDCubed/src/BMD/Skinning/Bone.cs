@@ -101,7 +101,7 @@ namespace BMDCubed.src.BMD.Skinning
             Vector3 trans = transform.ExtractTranslation();
 
             writer.Write(Unknown1);
-            writer.Write(Unknown2);
+            writer.Write((byte)0);
             writer.Write(Unknown3);
             writer.Write(Unknown4);
 

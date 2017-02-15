@@ -142,8 +142,8 @@ namespace BMDCubed.Materials
                 AlphaSetting = 0x1;
             Width = (ushort)bmp.Width;
             Height = (ushort)bmp.Height;
-            WrapS = WrapModes.Repeat;
-            WrapT = WrapModes.Repeat;
+            WrapS = WrapModes.MirroredRepeat;
+            WrapT = WrapModes.MirroredRepeat;
             PaletteFormat = PaletteFormats.IA8;
             PaletteCount = 0;
             BorderColor = new Color32(0, 0, 0, 0);
