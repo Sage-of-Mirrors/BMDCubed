@@ -197,9 +197,9 @@ namespace BMDCubed.src.BMD.Skinning
                 */
 
                 
-                Vector4 Row1 = mat.Row0;
-                Vector4 Row2 = mat.Row1;
-                Vector4 Row3 = mat.Row2;
+                Vector4 Row1 = mat.Column0;
+                Vector4 Row2 = mat.Column1;
+                Vector4 Row3 = mat.Column2;
 
                 writer.Write(Row1.X);
                 writer.Write(Row1.Y);
