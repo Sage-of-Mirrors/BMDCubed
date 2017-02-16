@@ -39,6 +39,8 @@ namespace BMDCubed.src.BMD.Geometry
         public List<Vector2>[] UVData;
         public List<Vector3>[] ColorData;
 
+        private Matrix4 bindPose;
+
         DataTypes PositionType;
         DataTypes NormalType;
         DataTypes UVType;
@@ -79,11 +81,7 @@ namespace BMDCubed.src.BMD.Geometry
                 bld.AppendLine(vec.ToString());
             File.WriteAllText(@"D:\vertex.txt", bld.ToString());
 
-            for (int i = 0; i < Positions.Count; i++)
-            {
-                Positions[i] = Vector3.TransformPosition(Positions[i], bindShape);
-            }
-
+            bindPose = bindShape;
             
             foreach (List<Vector2> list2 in UVData)
             {
@@ -101,19 +99,58 @@ namespace BMDCubed.src.BMD.Geometry
 
         public void TransformPositions(List<Weight> weights, List<Bone> bones)
         {
+            StringBuilder bldr = new StringBuilder();
+
             for (int i = 0; i < Positions.Count; i++)
             {
-                Weight weight = weights[i];
-                Matrix4 cumMat = Matrix4.Identity;
+                Positions[i] = Vector3.TransformPosition(Positions[i], bindPose);
 
-                for (int b = 0; b < weight.BoneIndexes.Count; b++)
+                Weight weight = weights[i];
+
+                bldr.AppendFormat("Position: {0}\nWeight Count: {1}\nBone Count: {2}\nWeights:\n",
+                                   Positions[i].ToString(), weight.BoneWeights.Count, weight.BoneIndexes.Count);
+
+                for (int j = 0; j < weight.BoneWeights.Count; j++)
                 {
-                    Matrix4 invBind = bones[weight.BoneIndexes[b]].InverseBindMatrix;
-                    cumMat *= Matrix4.Mult(invBind, weight.BoneWeights[b]);
+                    bldr.AppendFormat("Weight {0}: {1}\n", j, weight.BoneWeights[j]);
                 }
 
-                Positions[i] = Vector3.TransformPosition(Positions[i], cumMat);
+                for (int j = 0; j < weight.BoneIndexes.Count; j++)
+                {
+                    bldr.AppendFormat("Bone {0}: {1}\n", j, weight.BoneIndexes[j]);
+                }
+
+                float weightTotal = 0;
+
+                for (int j = 0; j < weight.BoneIndexes.Count; j++)
+                {
+                    weightTotal += weight.BoneWeights[j];
+                }
+
+                bldr.AppendFormat("Weight Total: {0}\n", weightTotal);
+
+                if (weight.BoneIndexes.Count == 1)
+                {
+                    Positions[i] = Vector3.TransformPosition(Positions[i], bones[weight.BoneIndexes[0]].InverseBindMatrix);
+                }
+
+                /*
+                else
+                {
+                    Matrix4 cumMat = Matrix4.Zero;
+
+                    for (int b = 0; b < weight.BoneIndexes.Count; b++)
+                    {
+                        cumMat += (Matrix4.Mult(bones[weight.BoneIndexes[b]].Transform, weight.BoneWeights[b]));
+                    }
+
+                    Positions[i] = Vector3.TransformVector(Positions[i], cumMat);
+                }*/
+
+                bldr.AppendFormat("Position after transformation: {0}\n\n", Positions[i]);
             }
+
+            File.WriteAllText(@"D:\WeightInfo.txt", bldr.ToString());
         }
 
         public void WriteVTX1(EndianBinaryWriter writer)

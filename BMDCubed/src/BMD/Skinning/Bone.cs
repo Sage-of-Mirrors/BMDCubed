@@ -28,7 +28,8 @@ namespace BMDCubed.src.BMD.Skinning
         public Matrix4 InverseBindMatrix;
         public List<Bone> Children;
         public List<Material> Materials;
-        private Matrix4 transform;
+        public Matrix4 Transform;
+        public Matrix4 transform;
 
         public Bone Parent;
 
@@ -96,10 +97,6 @@ namespace BMDCubed.src.BMD.Skinning
 
         public void WriteBone(EndianBinaryWriter writer)
         {
-            var mat = transform * InverseBindMatrix;
-
-            Vector3 trans = transform.ExtractTranslation();
-
             writer.Write(Unknown1);
             writer.Write((byte)0);
             writer.Write(Unknown3);
