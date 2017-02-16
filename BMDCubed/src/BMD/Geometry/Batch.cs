@@ -66,15 +66,25 @@ namespace BMDCubed.src.BMD.Geometry
 
             for (int i = 0; i < indexArray.Length; i += ActiveAttributes.Count)
             {
+                int matrixPosIndex = 0;
+
                 for (int attrib = 0; attrib < ActiveAttributes.Count; attrib++)
                 {
                     if (ActiveAttributes[attrib] == VertexAttributes.Position)
                     {
                         int positionIndex = indexArray[i + attrib];
                         PositionIndex.Add(positionIndex);
-                        VertIndexes.Add((short)positionIndex);
 
-                        WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
+                        if (!WeightIndexes.Contains(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])))
+                        {
+                            WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
+                            matrixPosIndex = (WeightIndexes.Count - 1) * 3;
+                        }
+                        else
+                            matrixPosIndex = WeightIndexes.IndexOf(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])) * 3;
+
+                        VertIndexes.Add((short)((matrixPosIndex)));
+                        VertIndexes.Add((short)positionIndex);
                     }
                     else
                     {
@@ -82,10 +92,10 @@ namespace BMDCubed.src.BMD.Geometry
                     }
                 }
 
-                VertIndexes.Add((short)((WeightIndexes.Count - 1) * 3));
+               
             }
 
-            ActiveAttributes.Add(VertexAttributes.PositionMatrixIndex);
+            ActiveAttributes.Insert(0, VertexAttributes.PositionMatrixIndex);
 
             for (int i = 0; i < VertIndexes.Count; i += 3 * ActiveAttributes.Count)
             {
@@ -149,10 +159,18 @@ namespace BMDCubed.src.BMD.Geometry
             writer.Write((byte)0x90);
             writer.Write((ushort)numVerts);
 
-            for (int i = 0; i < VertIndexes.Count; i++)
-                writer.Write((ushort)VertIndexes[i]);
+            for (int i = 0; i < VertIndexes.Count; i += ActiveAttributes.Count)
+            {
+                for (int b = 0; b < ActiveAttributes.Count; b++)
+                {
+                    if (ActiveAttributes[b] == VertexAttributes.PositionMatrixIndex)
+                        writer.Write((byte)VertIndexes[i + b]);
+                    else
+                        writer.Write((short)VertIndexes[i + b]);
+                }
+            }
 
-            Util.PadStreamWithZero(writer, 8);
+            Util.PadStreamWithZero(writer, 32);
         }
     }
 }

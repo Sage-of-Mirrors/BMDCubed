@@ -98,7 +98,7 @@ namespace BMDCubed.src.BMD.Skinning
         public void WriteBone(EndianBinaryWriter writer)
         {
             writer.Write(Unknown1);
-            writer.Write((byte)0);
+            writer.Write((byte)1);
             writer.Write(Unknown3);
             writer.Write(Unknown4);
 

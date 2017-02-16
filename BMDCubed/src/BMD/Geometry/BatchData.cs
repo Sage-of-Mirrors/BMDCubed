@@ -100,7 +100,11 @@ namespace BMDCubed.src.BMD.Geometry
                     for (int i = 0; i < dat.Count; i++)
                     {
                         attribWriter.Write((int)dat[i]);
-                        attribWriter.Write(3);
+
+                        if (dat[i] == VertexAttributes.PositionMatrixIndex)
+                            attribWriter.Write(1);
+                        else
+                            attribWriter.Write(3);
                     }
 
                     // Add null attribute. Tells the GPU there are no more attributes to read
@@ -125,6 +129,8 @@ namespace BMDCubed.src.BMD.Geometry
 
                 // Write attribute data
                 writer.Write(batchAttribData.ToArray());
+
+                Util.PadStreamWithString(writer, 32);
             }
 
             // Write matrix indexes offset

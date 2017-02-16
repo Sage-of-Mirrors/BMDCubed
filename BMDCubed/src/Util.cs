@@ -36,7 +36,7 @@ namespace BMDCubed.src
             writer.BaseStream.Position = writer.BaseStream.Length;
             for (int i = 0; i < delta; i++)
             {
-                writer.Write(0);
+                writer.Write((byte)0);
             }
         }
 
