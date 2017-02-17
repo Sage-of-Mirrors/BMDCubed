@@ -130,7 +130,7 @@ namespace BMDCubed.src.BMD.Geometry
                 // Write attribute data
                 writer.Write(batchAttribData.ToArray());
 
-                Util.PadStreamWithString(writer, 32);
+                //Util.PadStreamWithString(writer, 32);
             }
 
             // Write matrix indexes offset

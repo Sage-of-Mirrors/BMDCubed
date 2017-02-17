@@ -97,6 +97,9 @@ namespace BMDCubed.src.BMD.Geometry
 
             ActiveAttributes.Insert(0, VertexAttributes.PositionMatrixIndex);
 
+            // The triangles from the DAE have the wrong winding order. We need to swap the first
+            // and last vertexes of each triangle to flip them around.
+            // If we don't do that, the mesh will render inside-out!
             for (int i = 0; i < VertIndexes.Count; i += 3 * ActiveAttributes.Count)
             {
                 SwapVertexes(i, i + (2 * ActiveAttributes.Count));
