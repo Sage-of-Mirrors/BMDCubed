@@ -37,7 +37,9 @@ namespace BMDCubed.src.BMD.Geometry
         public List<Vector3> Normals;
 
         public List<Vector2>[] UVData;
-        public List<Vector3>[] ColorData;
+        public List<Vector4>[] ColorData;
+
+        public List<VertexAttributes> SortedAttributes;
 
         private Matrix4 bindPose;
 
@@ -60,12 +62,14 @@ namespace BMDCubed.src.BMD.Geometry
             Positions = new List<Vector3>();
             Normals = new List<Vector3>();
             UVData = new List<Vector2>[8];
-            ColorData = new List<Vector3>[2];
+            ColorData = new List<Vector4>[2];
 
             PositionType = position;
             NormalType = normal;
             UVType = uv;
             ColorType = color;
+
+            SortedAttributes = new List<VertexAttributes>();
 
             activeAttributes = new Dictionary<VertexAttributes, string>();
             GetActiveVertAttributes(mesh);
@@ -164,16 +168,16 @@ namespace BMDCubed.src.BMD.Geometry
                 writer.Write((int)0);
 
             // Vertex attributes
-            foreach (KeyValuePair<VertexAttributes, string> val in activeAttributes)
-                WriteAttribute(writer, val.Key);
+            foreach (VertexAttributes attrib in SortedAttributes)
+                WriteAttribute(writer, attrib);
             WriteAttribute(writer, VertexAttributes.NullAttr);
 
             Util.PadStreamWithString(writer, 32);
 
-            foreach (KeyValuePair<VertexAttributes, string> val in activeAttributes)
+            foreach (VertexAttributes attrib in SortedAttributes)
             {
-                WriteDataBankOffset(writer, val.Key);
-                WriteDataBank(writer, val.Key);
+                WriteDataBankOffset(writer, attrib);
+                WriteDataBank(writer, attrib);
                 Util.PadStreamWithString(writer, 32);
             }
 
@@ -309,9 +313,9 @@ namespace BMDCubed.src.BMD.Geometry
             }
         }
 
-        private void WriteColor(EndianBinaryWriter writer, List<Vector3> list, ColorDataTypes type)
+        private void WriteColor(EndianBinaryWriter writer, List<Vector4> list, ColorDataTypes type)
         {
-            foreach (Vector3 vec in list)
+            foreach (Vector4 vec in list)
             {
                 for (int i = 0; i < 3; i++)
                 {
@@ -425,6 +429,9 @@ namespace BMDCubed.src.BMD.Geometry
                     }
                 }
             }
+
+            SortedAttributes = activeAttributes.Keys.ToList();
+            SortedAttributes.Sort();
         }
 
         private void FillAttributeLists(Grendgine_Collada_Mesh mesh)
@@ -450,7 +457,7 @@ namespace BMDCubed.src.BMD.Geometry
                 else if (val.Key == VertexAttributes.Color0 || val.Key == VertexAttributes.Color1)
                 {
                     int colorIndex = (int)val.Key - 11; // 11 is the value of the Color0 attribute
-                    ColorData[colorIndex] = GetVertexData<Vector3>(mesh.Source.First(x => x.ID.Contains(val.Value)));
+                    ColorData[colorIndex] = GetVertexData<Vector4>(mesh.Source.First(x => x.ID.Contains(val.Value)));
                 }
             }
         }

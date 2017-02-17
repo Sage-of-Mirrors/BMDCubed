@@ -128,12 +128,11 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Write((short)0x10);
             writer.Write((short)bones.IndexOf(this));
 
-            writer.Write((short)1);
-            writer.Write((short)0);
-
-            
             foreach (Material mat in Materials)
             {
+                writer.Write((short)1);
+                writer.Write((short)0);
+
                 writer.Write((short)0x11);
                 writer.Write((short)materials.IndexOf(mat));
 
@@ -143,21 +142,32 @@ namespace BMDCubed.src.BMD.Skinning
                 writer.Write((short)0x12);
                 writer.Write((short)batches.IndexOf(mat.MatBatch));
 
-                writer.Write((short)1);
+                writer.Write((short)2);
+                writer.Write((short)0);
+
+                writer.Write((short)2);
                 writer.Write((short)0);
             }
 
             foreach (Bone bone in Children)
+            {
+                writer.Write((short)1);
+                writer.Write((short)0);
+
                 bone.WriteScenegraphRecursive(writer, bones, batches, materials);
 
+                writer.Write((short)2);
+                writer.Write((short)0);
+            }
+
+            /*
             for (int i = 0; i < Materials.Count * 2; i++)
             {
                 writer.Write((short)2);
                 writer.Write((short)0);
             }
-
-            writer.Write((short)2);
-            writer.Write((short)0);
+            */
         }
+
     }
 }
