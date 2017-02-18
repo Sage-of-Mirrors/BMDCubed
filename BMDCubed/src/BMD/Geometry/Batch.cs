@@ -13,14 +13,16 @@ namespace BMDCubed.src.BMD.Geometry
     class Batch
     {
         public List<VertexAttributes> ActiveAttributes;
+        public Dictionary<VertexAttributes, List<short>> AttributeData;
         public int AttributeIndex = 0;
 
         List<short> VertIndexes;
-
         List<int> PositionIndex;
         public List<int> WeightIndexes;
+
         int numTris;
         int numVerts;
+
         public string MaterialName;
         BoundingBox Bounds;
 
@@ -30,6 +32,8 @@ namespace BMDCubed.src.BMD.Geometry
                 return;
 
             ActiveAttributes = new List<VertexAttributes>();
+            AttributeData = new Dictionary<VertexAttributes, List<short>>();
+
             VertIndexes = new List<short>();
             PositionIndex = new List<int>();
             WeightIndexes = new List<int>();
@@ -55,6 +59,8 @@ namespace BMDCubed.src.BMD.Geometry
                     case Grendgine_Collada_Input_Semantic.TEXCOORD:
                         ActiveAttributes.Add(VertexAttributes.Tex0 + uvIndex++);
                         break;
+                    default:
+                        throw new FormatException(string.Format("Found unknown DAE semantic {0}!", input.Semantic));
                 }
             }
 
@@ -91,19 +97,36 @@ namespace BMDCubed.src.BMD.Geometry
                         VertIndexes.Add((short)indexArray[i + attrib]);
                     }
                 }
-
-               
             }
 
             ActiveAttributes.Insert(0, VertexAttributes.PositionMatrixIndex);
 
+            foreach (VertexAttributes attrib in ActiveAttributes)
+                AttributeData.Add(attrib, new List<short>());
+
             // The triangles from the DAE have the wrong winding order. We need to swap the first
             // and last vertexes of each triangle to flip them around.
             // If we don't do that, the mesh will render inside-out!
+            // We add 3 * ActiveAttributes.Count so that we can get the correct indexes of each
+            // vertex triplet.
             for (int i = 0; i < VertIndexes.Count; i += 3 * ActiveAttributes.Count)
             {
                 SwapVertexes(i, i + (2 * ActiveAttributes.Count));
             }
+
+            // We'll separate the indexes by attribute type. This will allow us to 
+            // sort the attributes in ActiveAttributes independently of the indexes'
+            // order. With that, we can give the model the attributes in the right order.
+            int runningIndex = 0;
+            for (int i = 0; i < numVerts; i++)
+            {
+                foreach (VertexAttributes attrib in ActiveAttributes)
+                {
+                    AttributeData[attrib].Add(VertIndexes[runningIndex++]);
+                }
+            }
+
+            ActiveAttributes.Sort();
         }
 
         private void SwapVertexes(int vert1, int vert2)
@@ -162,14 +185,14 @@ namespace BMDCubed.src.BMD.Geometry
             writer.Write((byte)0x90);
             writer.Write((ushort)numVerts);
 
-            for (int i = 0; i < VertIndexes.Count; i += ActiveAttributes.Count)
+            for (int i = 0; i < numVerts; i++)
             {
-                for (int b = 0; b < ActiveAttributes.Count; b++)
+                foreach (VertexAttributes attrib in ActiveAttributes)
                 {
-                    if (ActiveAttributes[b] == VertexAttributes.PositionMatrixIndex)
-                        writer.Write((byte)VertIndexes[i + b]);
+                    if (attrib == VertexAttributes.PositionMatrixIndex)
+                        writer.Write((byte)(AttributeData[attrib][i]));
                     else
-                        writer.Write((short)VertIndexes[i + b]);
+                        writer.Write(AttributeData[attrib][i]);
                 }
             }
 
