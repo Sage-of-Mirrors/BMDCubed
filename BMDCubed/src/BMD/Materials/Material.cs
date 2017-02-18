@@ -308,6 +308,8 @@ namespace BMDCubed.Materials
                 tex = new BinaryTextureImage(texName, bmp, BinaryTextureImage.TextureFormats.CMPR);
             }
 
+            CullMode = GXCullMode.None;
+
             // Search for an open texture slot and if there is one, put the texture there,
             // Include tex cooord gens,
             // Include a tex matrix,
