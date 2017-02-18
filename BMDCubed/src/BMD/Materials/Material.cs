@@ -191,10 +191,10 @@ namespace BMDCubed.Materials
                 };
 
                 TevStages[1] = TevStages[0];
-                TevStages[1].ColorIn[2] = GXCombineColorInput.ColorPrev;
+                TevStages[1].ColorIn[0] = GXCombineColorInput.ColorPrev;
 
-                TevStages[0] = new TevStage(new GXCombineColorInput[] { GXCombineColorInput.RasColor, GXCombineColorInput.Zero, GXCombineColorInput.Zero, GXCombineColorInput.Zero },
-                GXTevOp.Add, GXTevBias.Zero, GXTevScale.Scale_1, true, 0, new GXCombineAlphaInput[] { GXCombineAlphaInput.RasAlpha, source.Diffuse.Texture != null ? GXCombineAlphaInput.TexAlpha : GXCombineAlphaInput.Zero, GXCombineAlphaInput.Zero, GXCombineAlphaInput.Zero, },
+                TevStages[0] = new TevStage(new GXCombineColorInput[] { GXCombineColorInput.C0, GXCombineColorInput.TexColor, GXCombineColorInput.RasColor, GXCombineColorInput.Zero },
+                GXTevOp.Add, GXTevBias.Zero, GXTevScale.Scale_1, true, 0, new GXCombineAlphaInput[] { GXCombineAlphaInput.A0, GXCombineAlphaInput.TexAlpha, GXCombineAlphaInput.Zero, GXCombineAlphaInput.Zero, },
                 GXTevOp.Add, GXTevBias.Zero, GXTevScale.Scale_1, true, 0);
 
                 TevOrders[1] = new TevOrder(GXTexCoordSlot.TexCoord0, 0, GXColorChannelId.Color0A0);

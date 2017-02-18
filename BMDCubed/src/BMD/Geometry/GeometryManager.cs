@@ -24,7 +24,7 @@ namespace BMDCubed.src.BMD.Geometry
         /// <param name="uv">Datatype to use for UV data</param>
         /// <param name="color">Datatype to use for color data</param>
         public GeometryManager(Grendgine_Collada scene, DrawData drw1, Matrix4 bindShape, DataTypes position = DataTypes.F32, DataTypes normal = DataTypes.F32, 
-            DataTypes uv = DataTypes.F32, ColorDataTypes color = ColorDataTypes.RGB8)
+            DataTypes uv = DataTypes.F32, ColorDataTypes color = ColorDataTypes.RGBA8)
         {
             if (scene.Library_Geometries == null)
             {

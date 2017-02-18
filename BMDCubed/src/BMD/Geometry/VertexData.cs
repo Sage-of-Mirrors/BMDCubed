@@ -279,6 +279,7 @@ namespace BMDCubed.src.BMD.Geometry
                     switch (type)
                     {
                         case ColorDataTypes.RGB8:
+                        case ColorDataTypes.RGBA8:
                             float clampedVal = (float)Math.Max(0.0, Math.Min(1.0, vec[i]));
                             byte colorByte = (byte)Math.Floor(clampedVal == 1.0 ? 255 : clampedVal * 256.0);
                             writer.Write(colorByte);
