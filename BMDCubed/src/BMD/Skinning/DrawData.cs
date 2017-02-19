@@ -152,6 +152,8 @@ namespace BMDCubed.src.BMD.Skinning
                     writer.Write((ushort)(partialWeightList[i].BoneIndexes[j]));
             }
 
+            Util.PadStreamWithString(writer, 32);
+
             // Write offset to weight table
             Util.WriteOffset(writer, 0x14);
 
@@ -161,6 +163,8 @@ namespace BMDCubed.src.BMD.Skinning
                 for (int i = 0; i < weight.BoneWeights.Count; i++)
                     writer.Write(weight.BoneWeights[i]);
             }
+
+            Util.PadStreamWithString(writer, 32);
 
             // Write offset to inverse matrix table
             Util.WriteOffset(writer, 0x18);
@@ -243,7 +247,7 @@ namespace BMDCubed.src.BMD.Skinning
                 writer.Write((byte)0);
 
             // Write true bools for partial weights
-            for (int i = 0; i < partialWeightList.Count; i++)
+            for (int i = 0; i < partialWeightList.Count * 2; i++)
                 writer.Write((byte)1);
 
             // Write index table offset
@@ -252,6 +256,10 @@ namespace BMDCubed.src.BMD.Skinning
             // Write bone indexes for full weights
             for (int i = 0; i < fullWeightList.Count; i++)
                 writer.Write((short)fullWeightList[i].BoneIndexes[0]);
+
+            // Write EVP1 indexes for partial weights
+            for (int i = 0; i < partialWeightList.Count; i++)
+                writer.Write((short)i);
 
             // Write EVP1 indexes for partial weights
             for (int i = 0; i < partialWeightList.Count; i++)

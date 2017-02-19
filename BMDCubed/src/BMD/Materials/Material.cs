@@ -175,7 +175,7 @@ namespace BMDCubed.Materials
                 if (imageData == null)
                     throw new ArgumentException(string.Format("Texture {0} could not be loaded!", path));
 
-                SetTexture(Path.GetFileNameWithoutExtension(path), imageData);
+                SetTexture(source.Diffuse.Texture, Path.GetFileNameWithoutExtension(path), imageData);
             }
 
             // Add vertex colors to the shader if there are any
@@ -219,64 +219,7 @@ namespace BMDCubed.Materials
             }
         }
 
-        private void LoadMaterialData(StreamReader source, string sourceFolder)
-        {
-            while (!source.EndOfStream)
-            {
-                string line = source.ReadLine().Trim();
-                string[] decomp = line.Split(' ');
-
-                switch (decomp[0].Trim())
-                {
-                    case "Ka":
-                        AmbientColors[0] = new Color(Convert.ToSingle(decomp[1]), Convert.ToSingle(decomp[2]), Convert.ToSingle(decomp[3]), 1);
-                        break;
-                    case "Kd":
-                        MaterialColors[0] = new Color(Convert.ToSingle(decomp[1]), Convert.ToSingle(decomp[2]), Convert.ToSingle(decomp[3]), 1);
-                        break;
-                    case "map_Kd":
-                        Bitmap bmp = null;
-                        string texPath = "";
-                        string texName = "";
-
-                        // If the name is rooted, we need to extract the path.
-                        if (System.IO.Path.IsPathRooted(decomp[1]))
-                        {
-                            texPath = line.Substring(7);
-                            string[] splitPathForName = texPath.Split('\\');
-                            texName = splitPathForName[splitPathForName.Length - 1];
-                        }
-                        // Otherwise, we need to take the file name and create a path for it.
-                        else
-                        {
-                            texPath = sourceFolder + @"\" + decomp[1];
-                            texName = decomp[1];
-                        }
-
-                        // Test for which type we're loading
-                        if (texPath.EndsWith(".tga"))
-                        {
-                            bmp = TgaReader.Load(texPath);
-                        }
-                        else if (texPath.EndsWith(".png"))
-                        {
-                            bmp = new Bitmap(texPath);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Unknown texture format!");
-                            return;
-                        }
-
-                        SetTexture(texName, bmp);
-                        break;
-                    case "newmtl":
-                        return;
-                }
-            }
-        }
-
-        public void SetTexture(string texName, Bitmap bmp)
+        public void SetTexture(Grendgine_Collada_Texture sourceTex, string texName, Bitmap bmp)
         {
             BinaryTextureImage tex = null;
 
@@ -308,6 +251,7 @@ namespace BMDCubed.Materials
                 tex = new BinaryTextureImage(texName, bmp, BinaryTextureImage.TextureFormats.CMPR);
             }
 
+            tex.SetTextureSettings(sourceTex);
             CullMode = GXCullMode.None;
 
             // Search for an open texture slot and if there is one, put the texture there,

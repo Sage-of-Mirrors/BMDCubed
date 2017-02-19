@@ -67,7 +67,7 @@ namespace BMDCubed.src.BMD.Skinning
 
             // Flatten hierarchy for easy access later
             SkeletonRoot.FlattenHierarchy(FlatHierarchy, null);
-            //GetInvBindMatricesFromHierarchy();
+            GetInvBindMatricesFromHierarchy();
 
             // We'll make another list that contains just the bones with geometry from boneNameList, in order,
             // so that the vertex weights and bone assignments can be used correctly.
@@ -187,8 +187,9 @@ namespace BMDCubed.src.BMD.Skinning
                     curJnt = curJnt.Parent;
                 }
 
-                origJnt.Transform = cumulative;
-                origJnt.Transform.Transpose();
+                origJnt.InverseBindMatrix = cumulative;
+                //origJnt.InverseBindMatrix.Transpose();
+                origJnt.InverseBindMatrix.Invert();
             }
         }
 

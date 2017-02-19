@@ -6,6 +6,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Chadsoft.CTools.Image;
+using grendgine_collada;
 
 namespace BMDCubed.Materials
 {
@@ -189,6 +190,44 @@ namespace BMDCubed.Materials
             // Now load and decode image data into an ARGB array.
             stream.BaseStream.Position = headerStart + imageDataOffset + (0x20 * imageIndex);
             m_rgbaImageData = DecodeData(stream, Width, Height, Format, m_imagePalette, PaletteFormat);
+        }
+
+        public void SetTextureSettings(Grendgine_Collada_Texture src)
+        {
+            foreach (Grendgine_Collada_Extra extr in src.Extra)
+            {
+                foreach (Grendgine_Collada_Technique teq in extr.Technique)
+                {
+                    if (teq.profile == "MAYA")
+                        SetMayaTexSettings(teq);
+                }
+            }
+        }
+
+        private void SetMayaTexSettings(Grendgine_Collada_Technique teq)
+        {
+            foreach (System.Xml.XmlElement elm in teq.Data)
+            {
+                switch (elm.Name.ToLower())
+                {
+                    case "wrapu":
+                        if (elm.InnerText.ToLower() == "true")
+                            WrapS = WrapModes.Repeat;
+                        else
+                            WrapS = WrapModes.ClampToEdge;
+                        break;
+                    case "wrapv":
+                        if (elm.InnerText.ToLower() == "true")
+                            WrapT = WrapModes.Repeat;
+                        else
+                            WrapT = WrapModes.ClampToEdge;
+                        break;
+                    case "blend_mode":
+                        break;
+                    default:
+                        throw new FormatException(string.Format("Unknown texture setting {0}!", elm.Name));
+                }
+            }
         }
 
         public void SaveImageToDisk(string outputFile, byte[] imageData, int width, int height)
