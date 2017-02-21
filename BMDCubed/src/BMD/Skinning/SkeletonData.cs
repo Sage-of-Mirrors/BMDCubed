@@ -28,6 +28,25 @@ namespace BMDCubed.src.BMD.Skinning
             boneNameList = new List<string>();
             inverseBindMatrices = new List<Matrix4>();
 
+            // Get the skeleton's root from the visual scene
+            Grendgine_Collada_Node rootNode = GetSkeletonFromVisualScene(scene);
+
+            // If a proper root was found, we create a new bone hierarchy from it
+            if (rootNode != null)
+            {
+                SkeletonRoot = new Bone(rootNode);
+                MakeDAESkeleton(skin);
+            }
+            // Otherwise, we create a root bone ourselves
+            else
+            {
+                SkeletonRoot = new Bone();
+                FlatHierarchy.Add(SkeletonRoot);
+            }
+        }
+
+        private void MakeDAESkeleton(Grendgine_Collada_Skin skin)
+        {
             string bindShape = skin.Bind_Shape_Matrix.Value_As_String.Replace('\n', ' ').Trim();
             float[] matrixSrc = Grendgine_Collada_Parse_Utils.String_To_Float(bindShape);
 
@@ -35,9 +54,6 @@ namespace BMDCubed.src.BMD.Skinning
                                           matrixSrc[1], matrixSrc[5], matrixSrc[9], matrixSrc[13],
                                           matrixSrc[2], matrixSrc[6], matrixSrc[10], matrixSrc[14],
                                           matrixSrc[3], matrixSrc[7], matrixSrc[11], matrixSrc[15]);
-
-            // Get the skeleton's root from the visual scene
-            SkeletonRoot = new Bone(GetSkeletonFromVisualScene(scene));
 
             // Get bone names and inverse bind matrices
             if (skin.Joints != null)
@@ -116,6 +132,10 @@ namespace BMDCubed.src.BMD.Skinning
                     if (skelRoot != null)
                         break;
                 }
+            }
+            else if (node.Name.ToLower().Contains("root"))
+            {
+                skelRoot = node;
             }
 
             return skelRoot;
@@ -257,7 +277,17 @@ namespace BMDCubed.src.BMD.Skinning
             writer.Write(stringBank.ToArray());
         }
 
-        public void AssignBoneBoundingBoxes(List<Vector3> verts, List<Weight> weights)
+        public void AssignBoneBoundingBoxes(List<Vector3> verts, DrawData drw1)
+        {
+            if (drw1 != null)
+                AssignBoneBoundingBoxesFromWeights(verts, drw1.AllWeights);
+            else
+            {
+                SkeletonRoot.Bounds = new BoundingBox(verts);
+            }
+        }
+
+        private void AssignBoneBoundingBoxesFromWeights(List<Vector3> verts, List<Weight> weights)
         {
             List<Vector3>[] boneVerts = new List<Vector3>[FlatHierarchy.Count];
 

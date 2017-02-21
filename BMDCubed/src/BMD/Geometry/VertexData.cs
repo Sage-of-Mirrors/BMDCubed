@@ -97,15 +97,16 @@ namespace BMDCubed.src.BMD.Geometry
             }
         }
 
-        public void TransformPositions(List<Weight> weights, List<Bone> bones)
+        public void TransformPositions(DrawData drw1, List<Bone> bones)
         {
-            StringBuilder bldr = new StringBuilder();
+            if (drw1 == null)
+                return;
 
             for (int i = 0; i < Positions.Count; i++)
             {
                 Positions[i] = Vector3.TransformPosition(Positions[i], bindPose);
 
-                Weight weight = weights[i];
+                Weight weight = drw1.AllWeights[i];
 
                 if (weight.BoneIndexes.Count == 1)
                 {

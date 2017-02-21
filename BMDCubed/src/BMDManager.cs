@@ -20,11 +20,10 @@ namespace BMDCubed.src
 
         public BMDManager(Grendgine_Collada scene)
         {
-            //Skeleton = new SkeletonData(scene);
             Skeleton = new SkinningManager(scene);
             Geometry = new GeometryManager(scene, Skeleton.Drw1Data, Skeleton.SkelData.BindShapeMatrix);
-            Geometry.VertexData.TransformPositions(Skeleton.Drw1Data.AllWeights, Skeleton.SkelData.FlatHierarchy);
-            Skeleton.SkelData.AssignBoneBoundingBoxes(Geometry.VertexData.Positions, Skeleton.Drw1Data.AllWeights);
+            Geometry.VertexData.TransformPositions(Skeleton.Drw1Data, Skeleton.SkelData.FlatHierarchy);
+            Skeleton.SkelData.AssignBoneBoundingBoxes(Geometry.VertexData.Positions, Skeleton.Drw1Data);
             Materials = new MaterialManager(scene, Geometry.BatchData.Batches);
         }
 
@@ -59,20 +58,16 @@ namespace BMDCubed.src
             }
 
             // Write EVP1
-            using (MemoryStream evp1 = new MemoryStream())
-            {
-                EndianBinaryWriter evp1Writer = new EndianBinaryWriter(evp1, Endian.Big);
-                Skeleton.Drw1Data.WriteEVP1(evp1Writer);
-                writer.Write(evp1.ToArray());
-            }
+            if (Skeleton.Drw1Data != null)
+                WriteEVP1(writer);
+            else
+                WriteEVP1Stub(writer);
 
             // Write DRW1
-            using (MemoryStream drw1 = new MemoryStream())
-            {
-                EndianBinaryWriter drw1Writer = new EndianBinaryWriter(drw1, Endian.Big);
-                Skeleton.Drw1Data.WriteDRW1(drw1Writer);
-                writer.Write(drw1.ToArray());
-            }
+            if (Skeleton.Drw1Data != null)
+                WriteDRW1(writer);
+            else
+                WriteDRW1Stub(writer);
 
             // Write JNT1
             using (MemoryStream jnt1 = new MemoryStream())
@@ -131,6 +126,74 @@ namespace BMDCubed.src
 
             // Write chunk size size
             Util.WriteOffset(writer, 4);
+        }
+
+        private void WriteEVP1(EndianBinaryWriter writer)
+        {
+            using (MemoryStream evp1 = new MemoryStream())
+            {
+                EndianBinaryWriter evp1Writer = new EndianBinaryWriter(evp1, Endian.Big);
+                Skeleton.Drw1Data.WriteEVP1(evp1Writer);
+                writer.Write(evp1.ToArray());
+            }
+        }
+
+        private void WriteEVP1Stub(EndianBinaryWriter writer)
+        {
+            using (MemoryStream evp1 = new MemoryStream())
+            {
+                EndianBinaryWriter evp1Writer = new EndianBinaryWriter(evp1, Endian.Big);
+
+                evp1Writer.Write("EVP1".ToCharArray()); // FourCC, "EVP1"
+                evp1Writer.Write(32); // Size. The stub is always 32 bytes
+                evp1Writer.Write((short)0); // No EVP1 entries, so this is 0
+                evp1Writer.Write((short)-1); // Padding
+
+                // These 0s fill the stub
+                evp1Writer.Write(0);
+                evp1Writer.Write(0);
+                evp1Writer.Write(0);
+                evp1Writer.Write(0);
+
+                Util.PadStreamWithString(evp1Writer, 32);
+
+                writer.Write(evp1.ToArray());
+            }
+        }
+
+        private void WriteDRW1(EndianBinaryWriter writer)
+        {
+            using (MemoryStream drw1 = new MemoryStream())
+            {
+                EndianBinaryWriter drw1Writer = new EndianBinaryWriter(drw1, Endian.Big);
+                Skeleton.Drw1Data.WriteDRW1(drw1Writer);
+                writer.Write(drw1.ToArray());
+            }
+        }
+
+        private void WriteDRW1Stub(EndianBinaryWriter writer)
+        {
+            using (MemoryStream drw1 = new MemoryStream())
+            {
+                EndianBinaryWriter drw1Writer = new EndianBinaryWriter(drw1, Endian.Big);
+
+                drw1Writer.Write("DRW1".ToCharArray()); // FourCC, "DRW1"
+                drw1Writer.Write(32); // Size. The stub is always 32 bytes
+                drw1Writer.Write((short)1); // The only entry is a reference to the root bone
+                drw1Writer.Write((short)-1); // Padding
+
+                drw1Writer.Write(0x14); // Offset to bool array
+                drw1Writer.Write(0x16); // Offset to index data
+
+                drw1Writer.Write((byte)0); // Only bool in the array, false.
+                drw1Writer.Write((byte)0x54); // Bool array is padded to 2 bytes. I won't bother using the PadStreamWithString function here
+
+                drw1Writer.Write((short)0); // Index of root bone
+
+                Util.PadStreamWithString(drw1Writer, 32);
+
+                writer.Write(drw1.ToArray());
+            }
         }
     }
 }

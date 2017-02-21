@@ -72,7 +72,16 @@ namespace BMDCubed.src.BMD.Geometry
             indexArrayString = indexArrayString.Replace('\n', ' ').Trim();
             int[] indexArray = Grendgine_Collada_Parse_Utils.String_To_Int(indexArrayString);
 
-            // Here, we'll 
+            if (drw1 != null)
+                GetVertexDataWeighted(indexArray, drw1);
+            else
+                GetVertexDataNotWeighted(indexArray);
+        }
+
+        private void GetVertexDataWeighted(int[] indexArray, DrawData drw1)
+        {
+            // Load the data into VertIndexes. This version will add MatrixPositionIndex to the
+            // list of attributes for weighted meshes.
             for (int i = 0; i < indexArray.Length; i += ActiveAttributes.Count)
             {
                 int matrixPosIndex = 0;
@@ -135,6 +144,55 @@ namespace BMDCubed.src.BMD.Geometry
             }
 
             ActiveAttributes.Sort();
+        }
+
+        private void GetVertexDataNotWeighted(int[] indexArray)
+        {
+            // This will get the vertex indexes into VertIndexes.
+            // This version does not use the PositionMatrixIndex attribute.
+            for (int i = 0; i < indexArray.Length; i += ActiveAttributes.Count)
+            {
+                for (int attrib = 0; attrib < ActiveAttributes.Count; attrib++)
+                {
+                    if (ActiveAttributes[attrib] == VertexAttributes.Position)
+                    {
+                        int positionIndex = indexArray[i + attrib];
+                        PositionIndex.Add(positionIndex);
+                    }
+
+                    VertIndexes.Add((short)indexArray[i + attrib]);
+                }
+            }
+
+            foreach (VertexAttributes attrib in ActiveAttributes)
+                AttributeData.Add(attrib, new List<short>());
+
+            // The triangles from the DAE have the wrong winding order. We need to swap the first
+            // and last vertexes of each triangle to flip them around.
+            // If we don't do that, the mesh will render inside-out!
+            // We add 3 * ActiveAttributes.Count so that we can get the correct indexes of each
+            // vertex triplet.
+            for (int i = 0; i < VertIndexes.Count; i += 3 * ActiveAttributes.Count)
+            {
+                SwapVertexes(i, i + (2 * ActiveAttributes.Count));
+            }
+
+            // We'll separate the indexes by attribute type. This will allow us to 
+            // sort the attributes in ActiveAttributes independently of the indexes'
+            // order. With that, we can give GX the attribute indexes in the order
+            // that it expects.
+            int runningIndex = 0;
+            for (int i = 0; i < numVerts; i++)
+            {
+                foreach (VertexAttributes attrib in ActiveAttributes)
+                {
+                    AttributeData[attrib].Add(VertIndexes[runningIndex++]);
+                }
+            }
+
+            ActiveAttributes.Sort();
+
+            WeightIndexes.Add(0);
         }
 
         private void SwapVertexes(int vert1, int vert2)

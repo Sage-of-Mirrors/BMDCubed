@@ -33,6 +33,20 @@ namespace BMDCubed.src.BMD.Skinning
 
         public Bone Parent;
 
+        public Bone()
+        {
+            Unknown4 = 0xFF;
+            Scale = new Vector3(1, 1, 1);
+            Translation = new Vector3();
+            Rotation = new Quaternion();
+            Bounds = new BoundingBox();
+
+            Name = "root";
+            InverseBindMatrix = Matrix4.Identity;
+            Children = new List<Bone>();
+            Materials = new List<Material>();
+        }
+
         public Bone(Grendgine_Collada_Node node)
         {
             Children = new List<Bone>();
