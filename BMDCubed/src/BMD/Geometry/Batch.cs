@@ -10,6 +10,42 @@ using BMDCubed.src.BMD.Skinning;
 
 namespace BMDCubed.src.BMD.Geometry
 {
+    struct Triangle
+    {
+        List<int> Vertex1;
+        List<int> Vertex2;
+        List<int> Vertex3;
+
+        List<Weight> Weights;
+
+        public void SetVertexData(List<int> data, int index)
+        {
+            if (index == 0)
+                Vertex1 = data;
+            else if (index == 1)
+                Vertex2 = data;
+            else if (index == 2)
+                Vertex3 = data;
+            else
+                throw new FormatException("Triangles can only have 3 vertexes!");
+        }
+
+        public void AddVertexWeight(Weight wight)
+        {
+            if (Weights == null)
+                Weights = new List<Weight>();
+
+            Weights.Add(wight);
+        }
+
+        public void SwapFirstLastVertex()
+        {
+            List<int> temp1 = Vertex1;
+            Vertex1 = Vertex3;
+            Vertex3 = temp1;
+        }
+    }
+
     class Batch
     {
         public List<VertexAttributes> ActiveAttributes;
@@ -144,6 +180,44 @@ namespace BMDCubed.src.BMD.Geometry
             }
 
             ActiveAttributes.Sort();
+        }
+
+        private void GetVertexDataWeighted_New(int[] indexArray, DrawData drw1)
+        {
+            // We need to divide up the indexes into triangles, and swap the first and last vertexes.
+            // Then, we will divide up the triangles into packets based on their position matrix indexes.
+
+            List<Triangle> AllTris = new List<Triangle>(); // Master list of all triangles
+
+            int currentIndex = 0; // This is a running index which we'll use to access the indexArray, which contains the data for every vertex
+            
+            // For each triangle...
+            for (int i = 0; i < numTris; i++)
+            {
+                Triangle tri = new Triangle();
+                
+                // For each vertex of the triangle...
+                for (int b = 0; b < 3; b++)
+                {
+                    List<int> indexes = new List<int>(); // This will hold the attribute indexes for this vertex
+
+                    // For each vertex attribute in the vertex...
+                    foreach (VertexAttributes attrib in ActiveAttributes)
+                    {
+                        // If this is the position index, add the corresponding weight to the triangle.
+                        if (attrib == VertexAttributes.Position)
+                            tri.AddVertexWeight(drw1.AllDrw1Weights[indexArray[currentIndex]]);
+
+                        // Add the index for this attribute to the list for this vertex
+                        indexes.Add(indexArray[currentIndex++]);
+                    }
+
+                    tri.SetVertexData(indexes, b);
+                }
+
+                tri.SwapFirstLastVertex();
+                AllTris.Add(tri);
+            }
         }
 
         private void GetVertexDataNotWeighted(int[] indexArray)
