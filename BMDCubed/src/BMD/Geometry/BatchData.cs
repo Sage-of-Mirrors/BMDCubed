@@ -159,9 +159,13 @@ namespace BMDCubed.src.BMD.Geometry
             // Write packet data
             foreach (Batch bat in Batches)
             {
-                bat.WritePacket(writer);
-                packetOffsets.Add((int)writer.BaseStream.Length - basePos);
-                packetSizes.Add((int)writer.BaseStream.Length - lastPos);
+                foreach (Packet pack in bat.Packets)
+                {
+                    pack.WritePacket(writer, bat.ActiveAttributes);
+
+                    packetOffsets.Add((int)writer.BaseStream.Length - basePos);
+                    packetSizes.Add((int)writer.BaseStream.Length - lastPos);
+                }
 
                 lastPos = (int)writer.BaseStream.Length;
             }
@@ -174,21 +178,25 @@ namespace BMDCubed.src.BMD.Geometry
             // Write matrix info
             foreach (Batch bat in Batches)
             {
-                writer.Write((short)1);
-                writer.Write((ushort)bat.WeightIndexes.Count);
-                writer.Write(matrixIndexCount);
-
-                matrixIndexCount += bat.WeightIndexes.Count;
+                foreach (Packet pack in bat.Packets)
+                {
+                    pack.WriteMatrixEntryData(writer, matrixIndexCount);
+                    matrixIndexCount += pack.AttributeData[VertexAttributes.PositionMatrixIndex].Count;
+                }
             }
 
             // Write packet info offset
             Util.WriteOffset(writer, 0x28);
 
             // Write packet info
+            int runningIndex = 0;
             for (int i = 0; i < Batches.Count; i++)
             {
-                writer.Write(packetSizes[i]);
-                writer.Write(packetOffsets[i]);
+                for (int b = 0; b < Batches[i].Packets.Count; b++)
+                {
+                    writer.Write(packetSizes[runningIndex]);
+                    writer.Write(packetOffsets[runningIndex++]);
+                }
             }
 
             Util.PadStreamWithString(writer, 32);
@@ -199,8 +207,13 @@ namespace BMDCubed.src.BMD.Geometry
 
         private void WriteBatches(EndianBinaryWriter writer)
         {
+            int packetIndexCount = 0;
+
             for (int i = 0; i < Batches.Count; i++)
-                Batches[i].WriteBatch(writer, vertexAttributeOffsets, i);
+            {
+                Batches[i].WriteBatch(writer, vertexAttributeOffsets, packetIndexCount);
+                packetIndexCount += Batches[i].Packets.Count;
+            }
         }
     }
 }

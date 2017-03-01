@@ -12,37 +12,53 @@ namespace BMDCubed.src.BMD.Geometry
 {
     struct Triangle
     {
-        List<int> Vertex1;
-        List<int> Vertex2;
-        List<int> Vertex3;
-
-        List<Weight> Weights;
+        public List<int>[] VertexIndexes;
+        public List<int> MatrixList;
+        public List<Weight> Weights;
+        public List<Weight> UniqueWeights;
 
         public void SetVertexData(List<int> data, int index)
         {
-            if (index == 0)
-                Vertex1 = data;
-            else if (index == 1)
-                Vertex2 = data;
-            else if (index == 2)
-                Vertex3 = data;
-            else
-                throw new FormatException("Triangles can only have 3 vertexes!");
+            if (VertexIndexes == null)
+                VertexIndexes = new List<int>[3];
+
+            VertexIndexes[index] = data;
         }
 
         public void AddVertexWeight(Weight wight)
         {
             if (Weights == null)
                 Weights = new List<Weight>();
+            if (UniqueWeights == null)
+                UniqueWeights = new List<Weight>();
 
             Weights.Add(wight);
+
+            if (!UniqueWeights.Contains(wight))
+                UniqueWeights.Add(wight);
+
+            if (MatrixList == null)
+                MatrixList = new List<int>();
+
+            for (int i = 0; i < UniqueWeights.Count; i++)
+            {
+                for (int b = 0; b < UniqueWeights[i].BoneIndexes.Count; b++)
+                {
+                    if (!MatrixList.Contains(UniqueWeights[i].BoneIndexes[b]))
+                        MatrixList.Add(UniqueWeights[i].BoneIndexes[b]);
+                }
+            }
         }
 
         public void SwapFirstLastVertex()
         {
-            List<int> temp1 = Vertex1;
-            Vertex1 = Vertex3;
-            Vertex3 = temp1;
+            List<int> temp1 = VertexIndexes[0];
+            VertexIndexes[0] = VertexIndexes[2];
+            VertexIndexes[2] = temp1;
+
+            Weight tempWeight = Weights[0];
+            Weights[0] = Weights[2];
+            Weights[2] = tempWeight;
         }
     }
 
@@ -50,6 +66,7 @@ namespace BMDCubed.src.BMD.Geometry
     {
         public List<VertexAttributes> ActiveAttributes;
         public Dictionary<VertexAttributes, List<short>> AttributeData;
+        public List<Packet> Packets;
         public int AttributeIndex = 0;
 
         List<short> VertIndexes;
@@ -70,6 +87,7 @@ namespace BMDCubed.src.BMD.Geometry
             ActiveAttributes = new List<VertexAttributes>();
             AttributeData = new Dictionary<VertexAttributes, List<short>>();
 
+            Packets = new List<Packet>();
             VertIndexes = new List<short>();
             PositionIndex = new List<int>();
             WeightIndexes = new List<int>();
@@ -109,7 +127,7 @@ namespace BMDCubed.src.BMD.Geometry
             int[] indexArray = Grendgine_Collada_Parse_Utils.String_To_Int(indexArrayString);
 
             if (drw1 != null)
-                GetVertexDataWeighted(indexArray, drw1);
+                GetVertexDataWeighted_New(indexArray, drw1);
             else
                 GetVertexDataNotWeighted(indexArray);
         }
@@ -200,17 +218,26 @@ namespace BMDCubed.src.BMD.Geometry
                 for (int b = 0; b < 3; b++)
                 {
                     List<int> indexes = new List<int>(); // This will hold the attribute indexes for this vertex
+                    int positionMatrixIndex = 0;
 
                     // For each vertex attribute in the vertex...
                     foreach (VertexAttributes attrib in ActiveAttributes)
                     {
                         // If this is the position index, add the corresponding weight to the triangle.
                         if (attrib == VertexAttributes.Position)
-                            tri.AddVertexWeight(drw1.AllDrw1Weights[indexArray[currentIndex]]);
+                        {
+                            tri.AddVertexWeight(drw1.AllWeights[indexArray[currentIndex]]);
+                            PositionIndex.Add(indexArray[currentIndex]);
+
+                            Weight weight = drw1.AllWeights[indexArray[currentIndex]];
+                            positionMatrixIndex = drw1.AllDrw1Weights.IndexOf(weight);
+                        }
 
                         // Add the index for this attribute to the list for this vertex
                         indexes.Add(indexArray[currentIndex++]);
                     }
+
+                    indexes.Add(positionMatrixIndex);
 
                     tri.SetVertexData(indexes, b);
                 }
@@ -218,6 +245,29 @@ namespace BMDCubed.src.BMD.Geometry
                 tri.SwapFirstLastVertex();
                 AllTris.Add(tri);
             }
+
+            ActiveAttributes.Add(VertexAttributes.PositionMatrixIndex);
+
+            // Now we'll run through the triangles in the list we just made and put them into packets.
+            Packet currentPacket = new Packet(ActiveAttributes);
+
+            for (int i = 0; i < numTris; i++)
+            {
+                Triangle curTri = AllTris[i];
+
+                if (currentPacket.CanAddTriToPacket(curTri))
+                    currentPacket.AddTriVertexes(curTri);
+                else
+                {
+                    Packets.Add(currentPacket);
+                    currentPacket = new Packet(ActiveAttributes);
+                    i--;
+                }
+            }
+
+            Packets.Add(currentPacket);
+
+            ActiveAttributes.Sort();
         }
 
         private void GetVertexDataNotWeighted(int[] indexArray)
@@ -301,15 +351,15 @@ namespace BMDCubed.src.BMD.Geometry
             Bounds = new BoundingBox(listForBounds);
         }
 
-        public void WriteBatch(EndianBinaryWriter writer, List<int> attributeOffsets, int thisIndex)
+        public void WriteBatch(EndianBinaryWriter writer, List<int> attributeOffsets, int packetDataIndex)
         {
             writer.Write((byte)3); // Write matrix type. 0 is basic, 1 is ???, 2 is ???, 3 is multi-matrix.
             writer.Write((byte)0xFF); // Write padding
-            writer.Write((short)1); // Write packet count. For custom meshes, there will only ever be one packet per batch.
+            writer.Write((short)Packets.Count);
 
             writer.Write((short)(attributeOffsets[AttributeIndex])); // Write the offset to the attributes in this batch.
-            writer.Write((short)thisIndex);
-            writer.Write((short)thisIndex);
+            writer.Write((short)packetDataIndex); // This is the index of the first matrix index entry belonging to this batch.
+            writer.Write((short)packetDataIndex); // This is the index of the first packet info entry beloning to this batch.
 
             writer.Write((short)-1); // Padding
 
@@ -318,8 +368,24 @@ namespace BMDCubed.src.BMD.Geometry
 
         public void WriteMatrixIndexes(EndianBinaryWriter writer)
         {
+            if (Packets.Count == 0)
+                WriteMatrixIndexesNoSkinning(writer);
+            else
+                WriteMatrixIndexesSkinning(writer);
+        }
+
+        private void WriteMatrixIndexesNoSkinning(EndianBinaryWriter writer)
+        {
             for (int i = 0; i < WeightIndexes.Count; i++)
                 writer.Write((ushort)WeightIndexes[i]);
+        }
+
+        private void WriteMatrixIndexesSkinning(EndianBinaryWriter writer)
+        {
+            for (int i = 0; i < Packets.Count; i++)
+            {
+                Packets[i].WriteMatrixIndexes(writer);
+            }
         }
 
         public void WritePacket(EndianBinaryWriter writer)

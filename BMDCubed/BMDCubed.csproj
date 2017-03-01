@@ -62,6 +62,7 @@
     <Compile Include="src\BMD\Geometry\Batch.cs" />
     <Compile Include="src\BMD\Geometry\BatchData.cs" />
     <Compile Include="src\BMD\Geometry\GeometryManager.cs" />
+    <Compile Include="src\BMD\Geometry\Packet.cs" />
     <Compile Include="src\BMD\Geometry\Vertex.cs" />
     <Compile Include="src\BMD\Geometry\VertexData.cs" />
     <Compile Include="src\BMD\Materials\MaterialManager.cs" />
