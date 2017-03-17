@@ -272,11 +272,11 @@ namespace BMDCubed.src.BMD.Geometry
         {
             writer.Write((byte)3); // Write matrix type. 0 is basic, 1 is ???, 2 is ???, 3 is multi-matrix.
             writer.Write((byte)0xFF); // Write padding
-            writer.Write((short)1); // Write packet count. For custom meshes, there will only ever be one packet per batch.
+            writer.Write((short)BatchPackets.Count); // Write packet count.
 
             writer.Write((short)(attributeOffsets[AttributeIndex])); // Write the offset to the attributes in this batch.
-            writer.Write((short)thisIndex);
-            writer.Write((short)thisIndex);
+            writer.Write((short)thisIndex); // Matrix Data Offset
+            writer.Write((short)thisIndex); // Packet Data Offset
 
             writer.Write((short)-1); // Padding
 
