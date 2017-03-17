@@ -159,7 +159,7 @@ namespace BMDCubed.src.BMD.Geometry
             // Write packet data
             foreach (Batch bat in Batches)
             {
-                bat.WritePacket(writer);
+                bat.WritePackets(writer);
                 packetOffsets.Add((int)writer.BaseStream.Length - basePos);
                 packetSizes.Add((int)writer.BaseStream.Length - lastPos);
 
@@ -174,11 +174,14 @@ namespace BMDCubed.src.BMD.Geometry
             // Write matrix info
             foreach (Batch bat in Batches)
             {
-                writer.Write((short)1);
-                writer.Write((ushort)bat.WeightIndexes.Count);
-                writer.Write(matrixIndexCount);
+                foreach(Batch.Packet packet in bat.BatchPackets)
+                {
+                    writer.Write((short)1);
+                    writer.Write((ushort)packet.WeightIndexes.Count);
+                    writer.Write(matrixIndexCount);
 
-                matrixIndexCount += bat.WeightIndexes.Count;
+                    matrixIndexCount += packet.WeightIndexes.Count;
+                }
             }
 
             // Write packet info offset
