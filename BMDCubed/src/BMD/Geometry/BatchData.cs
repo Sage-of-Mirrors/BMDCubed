@@ -5,6 +5,7 @@ using OpenTK;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System;
 
 namespace BMDCubed.src.BMD.Geometry
 {
@@ -15,7 +16,7 @@ namespace BMDCubed.src.BMD.Geometry
 
         // Batches can share their attributes, so we store an array of each set of attributes batches use.
         // Then, in the actual batch, we can store the index to their set of attributes.
-        List<VertexAttributes>[] ActiveAttributesPerBatch;
+        List<List<VertexAttributes>> ActiveAttributesPerBatch;
 
         public BatchData(Grendgine_Collada_Mesh mesh, DrawData drw1)
         {
@@ -23,37 +24,15 @@ namespace BMDCubed.src.BMD.Geometry
 
             foreach (Grendgine_Collada_Triangles tri in mesh.Triangles)
             {
-                Batch batch = new Batch(tri, drw1);
-
                 // Tri count was zero, couldn't initialize batch
-                if (batch.ActiveAttributes == null)
+                if (tri.Count == 0)
                     continue;
-                else
-                    Batches.Add(batch);
+
+                Batch batch = new Batch(tri, drw1);
+                Batches.Add(batch);
             }
 
-            ActiveAttributesPerBatch = new List<VertexAttributes>[Batches.Count];
-
-            foreach (Batch bat in Batches)
-            {
-                for (int i = 0; i < Batches.Count; i++)
-                {
-                    if (ActiveAttributesPerBatch[i] == null)
-                    {
-                        ActiveAttributesPerBatch[i] = bat.ActiveAttributes;
-                        bat.AttributeIndex = i;
-                        break;
-                    }
-                    else
-                    {
-                        if (ActiveAttributesPerBatch[i].SequenceEqual(bat.ActiveAttributes))
-                        {
-                            bat.AttributeIndex = i;
-                            break;
-                        }
-                    }
-                }
-            }
+            ActiveAttributesPerBatch = new List<List<VertexAttributes>>();
         }
 
         public void SetBoundingBoxes(List<Vector3> posList)
@@ -85,6 +64,11 @@ namespace BMDCubed.src.BMD.Geometry
             // So we're going to write the attribute data to a memory stream, then use that to
             // write the batch data to the output stream.
             // Then we'll copy the attribute data to the output stream.
+
+            foreach(var batch in Batches)
+            {
+                batch.ConvertDataToFinalFormat(this);
+            }
 
             var batchAttributesData = CreateBatchAttributesStream();
 
@@ -177,10 +161,35 @@ namespace BMDCubed.src.BMD.Geometry
             Util.WriteOffset(writer, 4);
         }
 
+
         private void WriteBatches(EndianBinaryWriter writer)
         {
             for (int i = 0; i < Batches.Count; i++)
                 Batches[i].WriteBatch(writer, vertexAttributeOffsets, i);
+        }
+
+        /// <summary>
+        /// Given the input array of attributes, find its matching index in the <see cref="ActiveAttributesPerBatch"/> array.
+        /// If no match is found, the array of attributes is added and the new index is returned.
+        /// </summary>
+        /// <param name="batchAttributes"></param>
+        /// <returns></returns>
+        public int GetIndexForBatchAttributes(VertexAttributes[] batchAttributes)
+        {
+            for(int i = 0; i < ActiveAttributesPerBatch.Count; i++)
+            {
+                if (ActiveAttributesPerBatch[i].SequenceEqual(batchAttributes))
+                    return i;
+            }
+
+            // If we made it this far, there's no attributes which match yet.
+            ActiveAttributesPerBatch.Add(new List<VertexAttributes>(batchAttributes));
+            return ActiveAttributesPerBatch.Count - 1;
+        }
+
+        public List<VertexAttributes> GetIndexForBatchAttributes(int index)
+        {
+            return ActiveAttributesPerBatch[index];
         }
 
         private MemoryStream CreateBatchAttributesStream()

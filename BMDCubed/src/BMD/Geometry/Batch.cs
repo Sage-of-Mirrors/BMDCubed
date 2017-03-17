@@ -12,14 +12,14 @@ namespace BMDCubed.src.BMD.Geometry
         public class Packet
         {
             public List<short> VertIndexes;
-            public List<int> PositionIndex;
+            //public List<int> PositionIndex;
             public List<int> WeightIndexes;
             public Dictionary<VertexAttributes, List<short>> AttributeData;
 
             public Packet()
             {
                 VertIndexes = new List<short>();
-                PositionIndex = new List<int>();
+                //PositionIndex = new List<int>();
                 WeightIndexes = new List<int>();
 
                 AttributeData = new Dictionary<VertexAttributes, List<short>>();
@@ -51,7 +51,7 @@ namespace BMDCubed.src.BMD.Geometry
         }
 
         public List<VertexAttributes> ActiveAttributes;
-        public int AttributeIndex = 0;
+        //public int AttributeIndex = 0;
         public List<Packet> BatchPackets;
 
         int numTris;
@@ -60,57 +60,68 @@ namespace BMDCubed.src.BMD.Geometry
         public string MaterialName;
         BoundingBox Bounds;
 
+        private Grendgine_Collada_Triangles m_colladaTriangleData;
+        private DrawData m_drw1;
+
+        // Cached for writing to disk later
+        private int m_batchAttributeIndex;
+
         public Batch(Grendgine_Collada_Triangles colladaTris, DrawData drw1)
         {
-            if (colladaTris.Count == 0)
-                return;
+            m_colladaTriangleData = colladaTris;
+            m_drw1 = drw1;
+        }
 
-            ActiveAttributes = new List<VertexAttributes>();
+        /// <summary>
+        /// This converts the raw triangle data into the data needed by the SHP1 section. This allows us to create
+        /// other data (packet data, etc.) as we go and have it all get pushed into the master arrays in SHP1.
+        /// </summary>
+        /// <param name="batchData"></param>
+        public void ConvertDataToFinalFormat(BatchData batchData)
+        {
+            var batchAttributes = ConvertColladaAttributes();
+            m_batchAttributeIndex = batchData.GetIndexForBatchAttributes(batchAttributes);
+
             BatchPackets = new List<Packet>();
-
-            MaterialName = colladaTris.Material;
-            numTris = colladaTris.Count;
-
-            // This will parse the vertex attributes in the batch.
-            int uvIndex = 0;
-            int colorIndex = 0;
-            foreach (Grendgine_Collada_Input_Shared input in colladaTris.Input)
-            {
-                switch (input.Semantic)
-                {
-                    case Grendgine_Collada_Input_Semantic.VERTEX:
-                    case Grendgine_Collada_Input_Semantic.POSITION:
-                        ActiveAttributes.Add(VertexAttributes.Position);
-                        break;
-                    case Grendgine_Collada_Input_Semantic.NORMAL:
-                        ActiveAttributes.Add(VertexAttributes.Normal);
-                        break;
-                    case Grendgine_Collada_Input_Semantic.COLOR:
-                        ActiveAttributes.Add(VertexAttributes.Color0 + colorIndex++);
-                        break;
-                    case Grendgine_Collada_Input_Semantic.TEXCOORD:
-                        ActiveAttributes.Add(VertexAttributes.Tex0 + uvIndex++);
-                        break;
-                    default:
-                        throw new FormatException(string.Format("Found unknown DAE semantic {0}!", input.Semantic));
-                }
-            }
-
-            numVerts = numTris * 3;
+            MaterialName = m_colladaTriangleData.Material;
 
             // Grab the index data from the DAE's string array
-            string indexArrayString = colladaTris.P.Value_As_String;
+            string indexArrayString = m_colladaTriangleData.P.Value_As_String;
             indexArrayString = indexArrayString.Replace('\n', ' ').Trim();
-            int[] indexArray = Grendgine_Collada_Parse_Utils.String_To_Int(indexArrayString);
+            int[] triangleIndexes = Grendgine_Collada_Parse_Utils.String_To_Int(indexArrayString);
 
-            // Create at least one packet.
-            BatchPackets.Add(new Packet());
-
-            if (drw1 != null)
-                GetVertexDataWeighted(indexArray, drw1);
+            if (m_drw1 != null)
+                GetVertexDataWeighted(triangleIndexes, batchData.GetIndexForBatchAttributes(m_batchAttributeIndex));
             else
-                GetVertexDataNotWeighted(indexArray);
+                GetVertexDataNotWeighted(triangleIndexes);
         }
+
+        private void GetVertexDataWeighted(int[] triangleArray, List<VertexAttributes> attributes)
+        {
+            Packet curPacket = new Packet();
+            BatchPackets.Add(curPacket);
+
+            // Collada gives us one index per attribute, for a total of (3 * numAttributes) per triangle.
+            for(int i = 0; i < triangleArray.Length; i += attributes.Count)
+            {
+                int matrixPosIndex = 0;
+                for(int attribIndex = 0; attribIndex < attributes.Count; attribIndex++)
+                {
+                    // If this is the vertex position attribute
+                    if(attributes[attribIndex] == VertexAttributes.Position)
+                    {
+                        int vertPosIndex = triangleArray[i + attribIndex];
+
+                        // 
+                        if(!curPacket.WeightIndexes.Contains(m_drw1.AllDrw1Weights.IndexOf(m_drw1.AllWeights[vertPosIndex])))
+                        {
+
+                        }
+                    }
+                }
+            }
+        }
+
 
         private void GetVertexDataWeighted(int[] indexArray, DrawData drw1)
         {
@@ -296,6 +307,45 @@ namespace BMDCubed.src.BMD.Geometry
                 for (int i = 0; i < packet.WeightIndexes.Count; i++)
                     writer.Write((ushort)packet.WeightIndexes[i]);
             }
+        }
+
+        /// <summary>
+        /// This parses the Collada data and converts the Collada attributes into J3D <see cref="VertexAttributes"/>.
+        /// </summary>
+        /// <returns></returns>
+        private VertexAttributes[] ConvertColladaAttributes()
+        {
+            var attributes = new List<VertexAttributes>();
+
+            int uvIndex = 0;
+            int colorIndex = 0;
+            foreach (Grendgine_Collada_Input_Shared input in m_colladaTriangleData.Input)
+            {
+                switch (input.Semantic)
+                {
+                    case Grendgine_Collada_Input_Semantic.VERTEX:
+                    case Grendgine_Collada_Input_Semantic.POSITION:
+                        attributes.Add(VertexAttributes.Position);
+                        break;
+                    case Grendgine_Collada_Input_Semantic.NORMAL:
+                        attributes.Add(VertexAttributes.Normal);
+                        break;
+                    case Grendgine_Collada_Input_Semantic.COLOR:
+                        attributes.Add(VertexAttributes.Color0 + colorIndex++);
+                        break;
+                    case Grendgine_Collada_Input_Semantic.TEXCOORD:
+                        attributes.Add(VertexAttributes.Tex0 + uvIndex++);
+                        break;
+                    default:
+                        throw new FormatException(string.Format("Found unknown DAE semantic {0}!", input.Semantic));
+                }
+            }
+
+            // If this model has skinning data then we'll insert a PositionMatrixIndex attribute.
+            if (m_drw1 != null)
+                attributes.Add(VertexAttributes.PositionMatrixIndex);
+
+            return attributes.ToArray();
         }
     }
 }
