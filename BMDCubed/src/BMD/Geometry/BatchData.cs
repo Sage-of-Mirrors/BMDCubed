@@ -18,6 +18,12 @@ namespace BMDCubed.src.BMD.Geometry
         // Then, in the actual batch, we can store the index to their set of attributes.
         List<List<VertexAttributes>> ActiveAttributesPerBatch;
 
+        private EndianBinaryWriter m_batchAttributeData;
+        private EndianBinaryWriter m_batchPacketData;
+        private EndianBinaryWriter m_batchPrimitiveData;
+        private EndianBinaryWriter m_matrixTableData;
+        private EndianBinaryWriter m_matrixDataData;
+
         public BatchData(Grendgine_Collada_Mesh mesh, DrawData drw1)
         {
             Batches = new List<Batch>();
@@ -33,17 +39,28 @@ namespace BMDCubed.src.BMD.Geometry
             }
 
             ActiveAttributesPerBatch = new List<List<VertexAttributes>>();
+
+            // Convert our Collada Data to the data needed for each SHP1.Batch
+            foreach (var batch in Batches)
+            {
+                batch.ConvertDataToFinalFormat(this);
+            }
         }
 
         public void SetBoundingBoxes(List<Vector3> posList)
         {
             foreach (Batch batch in Batches)
-                batch.GetBoundingBoxData(posList);
+                batch.CalculateBoundingBoxData(posList);
         }
 
         public void WriteSHP1(EndianBinaryWriter writer)
         {
             vertexAttributeOffsets = new List<int>();
+            m_batchAttributeData = new EndianBinaryWriter(new MemoryStream(), Endian.Big);
+            m_batchPacketData = new EndianBinaryWriter(new MemoryStream(), Endian.Big);
+            m_matrixTableData = new EndianBinaryWriter(new MemoryStream(), Endian.Big);
+            m_matrixDataData = new EndianBinaryWriter(new MemoryStream(), Endian.Big);
+            m_batchPrimitiveData = new EndianBinaryWriter(new MemoryStream(), Endian.Big);
 
             writer.Write("SHP1".ToCharArray());
             writer.Write(0); // Placeholder for chunk size
@@ -59,36 +76,43 @@ namespace BMDCubed.src.BMD.Geometry
             writer.Write(0); // Placeholder for offset to matrix data
             writer.Write(0); // Placeholder for offset to packet location data
 
-            // Batch data is found *before* the attribute data. Unfortunately, we need the attribute data
-            // first so we can get the offset of the attribute set that each batch uses.
-            // So we're going to write the attribute data to a memory stream, then use that to
-            // write the batch data to the output stream.
-            // Then we'll copy the attribute data to the output stream.
+            // This writes the actual batch information, and initializes the BatchAttribute, MatrixTable, MatrixData, and PrimitiveData 
+            WriteBatchDataToStream(writer);
 
-            foreach(var batch in Batches)
-            {
-                batch.ConvertDataToFinalFormat(this);
-            }
-
-            var batchAttributesData = CreateBatchAttributesStream();
-
-            // Write batch data
-            WriteBatches(writer);
-
-            // Write index array offset. Don't know what this does, really
+            // SHP1 has an index remap table. We don't remap anything so we'll fill in a dummy table.
             Util.WriteOffset(writer, 0x10);
-
-            // Write index array offset
             for (int i = 0; i < Batches.Count; i++)
                 writer.Write((short)i);
 
+            // Next we need to write the Attributes that all Batches use.
+            Util.WriteOffset(writer, 0x18); // Skips the Unknown Offset at 0x14
+            WriteBatchAttributesToStream(writer);
+
+            // Next we write the MatrixTable that all Batches contributed to
+            Util.WriteOffset(writer, 0x1C);
+            WriteMatrixTableToStream(writer);
+
+            // Then we write the PrimitiveData that all Batches contributed to
+            Util.WriteOffset(writer, 0x20);
+            WritePrimitiveDataToStream(writer);
+
+            // Then we write the Matrix Data that all Batches contributed to
+            Util.WriteOffset(writer, 0x24);
+            WriteMatrixDataToStream(writer);
+
+            // Finally we write the Packet Location
+            Util.WriteOffset(writer, 0x28);
+            WritePacketDataToStream(writer);
+
+            // Pad our our SHP1 chunk to the next 32-byte alignment boundry
             Util.PadStreamWithString(writer, 32);
 
-            // Write attribute data offset
-            Util.WriteOffset(writer, 0x18);
+            // Finally go back and write the full chunk size
+            Util.WriteOffset(writer, 4);
+
 
             // Write attribute data
-            writer.Write(batchAttributesData.ToArray());
+            /*writer.Write(batchAttributesData.ToArray());
             batchAttributesData.Dispose();
             batchAttributesData = null;
 
@@ -158,14 +182,103 @@ namespace BMDCubed.src.BMD.Geometry
             Util.PadStreamWithString(writer, 32);
 
             // Write chunk size
-            Util.WriteOffset(writer, 4);
+            Util.WriteOffset(writer, 4);*/
         }
 
-
-        private void WriteBatches(EndianBinaryWriter writer)
+        private void WriteBatchDataToStream(EndianBinaryWriter writer)
         {
-            for (int i = 0; i < Batches.Count; i++)
-                Batches[i].WriteBatch(writer, vertexAttributeOffsets, i);
+            foreach (var batch in Batches)
+                batch.WriteBatch(writer, this);
+        }
+
+        private void WriteMatrixTableToStream(EndianBinaryWriter writer)
+        {
+            var memoryStream = m_matrixTableData.BaseStream as MemoryStream;
+            writer.Write(memoryStream.ToArray());
+        }
+
+        private void WriteMatrixDataToStream(EndianBinaryWriter writer)
+        {
+            var memoryStream = m_matrixDataData.BaseStream as MemoryStream;
+            writer.Write(memoryStream.ToArray());
+        }
+
+        private void WriteBatchAttributesToStream(EndianBinaryWriter writer)
+        {
+            var memoryStream = m_batchAttributeData.BaseStream as MemoryStream;
+            writer.Write(memoryStream.ToArray());
+        }
+
+        private void WritePacketDataToStream(EndianBinaryWriter writer)
+        {
+            var memoryStream = m_batchPacketData.BaseStream as MemoryStream;
+            writer.Write(memoryStream.ToArray());
+        }
+
+        private void WritePrimitiveDataToStream(EndianBinaryWriter writer)
+        {
+            var memoryStream = m_batchPrimitiveData.BaseStream as MemoryStream;
+            writer.Write(memoryStream.ToArray());
+        }
+
+        internal void WriteBatchAttributes(int batchAttributeIndex, out ushort attributeListOffset)
+        {
+            var attributes = ActiveAttributesPerBatch[batchAttributeIndex];
+            attributeListOffset = (ushort)m_batchAttributeData.BaseStream.Position;
+
+            foreach (var attribute in attributes)
+            {
+                // Write the Attribute
+                m_batchAttributeData.Write((int)attribute);
+
+                // Write the Data Type
+                if (attribute == VertexAttributes.PositionMatrixIndex)
+                    m_batchAttributeData.Write(0x1); // Data Type is an Unsigned Byte (U8)
+                else
+                    m_batchAttributeData.Write(0x3); // Data Type is Unsigned Short (U16);
+            }
+        }
+
+        internal void WriteBatchMatrixData(List<Batch.Packet> batchPackets, out ushort firstMatrixDataIndex)
+        {
+            // Return the first matrix for this batch.
+            firstMatrixDataIndex = (ushort)(m_matrixDataData.BaseStream.Length / 0x2);
+
+            // Remember:
+            // MatrixTable is just a header that is associated with each packet that has Unknown0, MatrixCount and FirstMatrixIndex
+            // then we have the MatrixData which is the raw indexes. So we need to write both of them separately,
+            // and FirstMatrixIndex is the index into the MatrixData that that packet uses first, and then MatrixCount successive ones follow.
+            foreach(var packet in batchPackets)
+            {
+                m_matrixTableData.Write((ushort)0); // Unknown 0
+                m_matrixTableData.Write((ushort)packet.PacketMatrixData.MatrixTableData.Count); // How many matrices
+                m_matrixTableData.Write((ushort)m_matrixDataData.BaseStream.Length / 2); // Index to the first one
+
+                // Then write all of the actual indexes
+                foreach (var matrixIndex in packet.PacketMatrixData.MatrixTableData)
+                    m_matrixDataData.Write((ushort)matrixIndex);
+            }
+        }
+
+        internal void WriteBatchPackets(List<Batch.Packet> batchPackets, out ushort firstPacketIndex)
+        {
+            // Return the first packet for this batch
+            firstPacketIndex = (ushort)(m_batchPacketData.BaseStream.Length / 0x4);
+
+            foreach(var packet in batchPackets)
+            {
+                long streamStart = m_batchPrimitiveData.BaseStream.Position;
+
+                // Write the primitive data.
+                packet.WritePrimitiveData(m_batchPrimitiveData);
+
+                // Calculate the packet size
+                int packetSize = (int)(m_batchPrimitiveData.BaseStream.Position - streamStart);
+                int primitiveOffset = (int)streamStart;
+
+                m_batchPacketData.Write((int)packetSize); // How much primitive data is there for this packet?
+                m_batchPacketData.Write((int)primitiveOffset); // Offset into the primitive data that this packet has.
+            }
         }
 
         /// <summary>
@@ -176,7 +289,7 @@ namespace BMDCubed.src.BMD.Geometry
         /// <returns></returns>
         public int GetIndexForBatchAttributes(VertexAttributes[] batchAttributes)
         {
-            for(int i = 0; i < ActiveAttributesPerBatch.Count; i++)
+            for (int i = 0; i < ActiveAttributesPerBatch.Count; i++)
             {
                 if (ActiveAttributesPerBatch[i].SequenceEqual(batchAttributes))
                     return i;
@@ -190,37 +303,6 @@ namespace BMDCubed.src.BMD.Geometry
         public List<VertexAttributes> GetIndexForBatchAttributes(int index)
         {
             return ActiveAttributesPerBatch[index];
-        }
-
-        private MemoryStream CreateBatchAttributesStream()
-        {
-            var memoryStream = new MemoryStream();
-            EndianBinaryWriter attribWriter = new EndianBinaryWriter(memoryStream, Endian.Big);
-
-            // For each unique set of attributes across all of our batches.
-            foreach (List<VertexAttributes> dat in ActiveAttributesPerBatch)
-            {
-                if (dat == null)
-                    break;
-
-                vertexAttributeOffsets.Add((int)(attribWriter.BaseStream.Length));
-
-                for (int i = 0; i < dat.Count; i++)
-                {
-                    attribWriter.Write((int)dat[i]);
-
-                    if (dat[i] == VertexAttributes.PositionMatrixIndex)
-                        attribWriter.Write(1); // Data Type is an Unsigned Byte (U8)
-                    else
-                        attribWriter.Write(3); // Data Type is Unsigned Short (U16)
-                }
-
-                // Add null attribute. Tells the GPU there are no more attributes to read
-                attribWriter.Write(0xFF);
-                attribWriter.Write(0);
-            }
-
-            return memoryStream;
         }
     }
 }

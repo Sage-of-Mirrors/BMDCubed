@@ -180,7 +180,7 @@ namespace BMDCubed.Materials
 
             // Add vertex colors to the shader if there are any
             
-            if (batch.ActiveAttributes.Contains(VertexAttributes.Color0))
+            if (batch.Attributes.Contains(VertexAttributes.Color0))
             {
                 ChannelControls = new ChannelControl[4]
                 {
