@@ -116,13 +116,7 @@ namespace BMDCubed.src.BMD.Geometry
 
         private void GetVertexDataWeighted(int[] triangleArray, List<VertexAttributes> attributes)
         {
-            Packet curPacket = new Packet();
-            BatchPackets.Add(curPacket);
-
-            // Initialize an array to hold the indexes of each attribute within our Packet's data.
-            foreach (var attribute in attributes)
-                curPacket.AttributeData[attribute] = new List<short>();
-
+            Packet curPacket = null;
 
             // Collada gives us one index per attribute, for a total of (3 * numAttributes) per triangle.
             // We need to get a copy of the attributes array without the PositionMatrixIndex however as
@@ -132,6 +126,17 @@ namespace BMDCubed.src.BMD.Geometry
 
             for (int i = 0; i < triangleArray.Length; i += attribCopy.Count)
             {
+                // If we don't have enough possible spots for our PMI's we'll just start a new packet at the end of this triangle.
+                if (curPacket == null /*|| curPacket.PacketMatrixData.MatrixCount >= 7*/)
+                {
+                    curPacket = new Packet();
+                    BatchPackets.Add(curPacket);
+
+                    // Initialize an array to hold the indexes of each attribute within our Packet's data.
+                    foreach (var attribute in attributes)
+                        curPacket.AttributeData[attribute] = new List<short>();
+                }
+
                 for (int attribIndex = 0; attribIndex < attribCopy.Count; attribIndex++)
                 {
                     // We only care about the Position attribute while finding skinning information
