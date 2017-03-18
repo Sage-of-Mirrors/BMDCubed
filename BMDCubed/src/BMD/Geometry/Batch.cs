@@ -139,6 +139,9 @@ namespace BMDCubed.src.BMD.Geometry
 
                 for (int attribIndex = 0; attribIndex < attribCopy.Count; attribIndex++)
                 {
+                    // Assign the index into the AttributeData for this attribute on this packet
+                    curPacket.AttributeData[attribCopy[attribIndex]].Add((short)triangleArray[i + attribIndex]);
+
                     // We only care about the Position attribute while finding skinning information
                     if (attribCopy[attribIndex] != VertexAttributes.Position)
                         continue;
@@ -163,13 +166,6 @@ namespace BMDCubed.src.BMD.Geometry
                     else
                         matrixPosIndex = curPacket.WeightIndexes.IndexOf(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])) * 3;*/
                 }
-            }
-
-            // Actually assign the indexes into our AttributeData
-            for (int i = 0; i < triangleArray.Length;)
-            {
-                foreach (var attribute in attribCopy)
-                    curPacket.AttributeData[attribute].Add((short)triangleArray[i++]);
             }
 
             // Reverse Triangle Winding Order
