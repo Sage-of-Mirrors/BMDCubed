@@ -42,19 +42,21 @@ namespace BMDCubed.src.BMD.Geometry
                 writer.Write((byte)0x90); // Write primitive type. For the foreseeable future, we will only support triangles, which are 0x90.
                 writer.Write((ushort)numVertices); // Vertex count
 
-                List<VertexAttributes> attributeOrder = new List<VertexAttributes>();
 
+                // We need to sort the attributes into ascending order before we write them to the file, because GX
+                // expects them this way. We can't sort them before now, because we need them in order of the original Collada file to load those properly.
+                List<VertexAttributes> attributesOrdered = new List<VertexAttributes>();
                 foreach (var kvp in AttributeData)
-                    attributeOrder.Add(kvp.Key);
+                    attributesOrdered.Add(kvp.Key);
 
-                attributeOrder.Sort();
+                attributesOrdered.Sort();
 
                 // For each vertex, we're going to run through the vertex attributes
                 // and write the corresponding data.
                 for (int i = 0; i < numVertices; i++)
                 {
                     // Write each attribute for each vertex
-                    foreach (VertexAttributes attrib in attributeOrder)
+                    foreach (VertexAttributes attrib in attributesOrdered)
                     {
                         if (attrib == VertexAttributes.PositionMatrixIndex)
                             writer.Write((byte)(AttributeData[attrib][i])); // PositionMatrixIndex needs to be 8 bits, so it's a byte
@@ -109,10 +111,8 @@ namespace BMDCubed.src.BMD.Geometry
             indexArrayString = indexArrayString.Replace('\n', ' ').Trim();
             int[] triangleIndexes = Grendgine_Collada_Parse_Utils.String_To_Int(indexArrayString);
 
-            //if (m_drw1 != null)
+            // Convert the Collada data into multiple Packets for this batch.
             GetVertexDataWeighted(triangleIndexes, batchData.GetIndexForBatchAttributes(m_batchAttributeIndex));
-            //else
-            //GetVertexDataNotWeighted(triangleIndexes);
         }
 
         private void GetVertexDataWeighted(int[] triangleArray, List<VertexAttributes> attributes)
@@ -165,6 +165,7 @@ namespace BMDCubed.src.BMD.Geometry
                         }
                         else
                         {
+                            // Ensure there's at least one entry in the Matrix Data so that the PMI index can refer to it.
                             if (curPacket.PacketMatrixData.MatrixCount == 0)
                                 curPacket.PacketMatrixData.MatrixTableData.Add((ushort)0);
                         }
@@ -183,59 +184,6 @@ namespace BMDCubed.src.BMD.Geometry
             // Sort the Attributes in ascending order to make GX happy
             attributes.Sort();
             m_attributeListCopy = attributes;
-        }
-
-        private void GetVertexDataNotWeighted(int[] indexArray)
-        {
-            throw new NotImplementedException();
-
-            /*Packet curPacket = BatchPackets[BatchPackets.Count - 1];
-
-            // This will get the vertex indexes into VertIndexes.
-            // This version does not use the PositionMatrixIndex attribute.
-            for (int i = 0; i < indexArray.Length; i += ActiveAttributes.Count)
-            {
-                for (int attrib = 0; attrib < ActiveAttributes.Count; attrib++)
-                {
-                    if (ActiveAttributes[attrib] == VertexAttributes.Position)
-                    {
-                        int positionIndex = indexArray[i + attrib];
-                        curPacket.PositionIndex.Add(positionIndex);
-                    }
-
-                    curPacket.VertIndexes.Add((short)indexArray[i + attrib]);
-                }
-            }
-
-            foreach (VertexAttributes attrib in ActiveAttributes)
-                curPacket.AttributeData.Add(attrib, new List<short>());
-
-            // The triangles from the DAE have the wrong winding order. We need to swap the first
-            // and last vertexes of each triangle to flip them around.
-            // If we don't do that, the mesh will render inside-out!
-            // We add 3 * ActiveAttributes.Count so that we can get the correct indexes of each
-            // vertex triplet.
-            for (int i = 0; i < curPacket.VertIndexes.Count; i += 3 * ActiveAttributes.Count)
-            {
-                SwapVertexes(curPacket, i, i + (2 * ActiveAttributes.Count));
-            }
-
-            // We'll separate the indexes by attribute type. This will allow us to 
-            // sort the attributes in ActiveAttributes independently of the indexes'
-            // order. With that, we can give GX the attribute indexes in the order
-            // that it expects.
-            int runningIndex = 0;
-            for (int i = 0; i < numVerts; i++)
-            {
-                foreach (VertexAttributes attrib in ActiveAttributes)
-                {
-                    curPacket.AttributeData[attrib].Add(curPacket.VertIndexes[runningIndex++]);
-                }
-            }
-
-            ActiveAttributes.Sort();
-
-            curPacket.WeightIndexes.Add(0);*/
         }
 
         private void SwapVertexes(Packet packet, int vert1, int vert2, IList<VertexAttributes> attributes)
@@ -330,8 +278,7 @@ namespace BMDCubed.src.BMD.Geometry
                 }
             }
 
-            // If this model has skinning data then we'll insert a PositionMatrixIndex attribute.
-            //if (m_drw1 != null)
+            // Insert a PMI attribute into the list.
             attributes.Add(VertexAttributes.PositionMatrixIndex);
 
             return attributes.ToArray();
