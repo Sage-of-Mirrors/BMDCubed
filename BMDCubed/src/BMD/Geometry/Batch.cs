@@ -124,7 +124,7 @@ namespace BMDCubed.src.BMD.Geometry
             var attribCopy = new List<VertexAttributes>(attributes);
             attribCopy.Remove(VertexAttributes.PositionMatrixIndex);
 
-            for (int i = 0; i < triangleArray.Length; i += attribCopy.Count)
+            for (int colladaIndex = 0; colladaIndex < triangleArray.Length;)
             {
                 // If we don't have enough possible spots for our PMI's we'll just start a new packet at the end of this triangle.
                 if (curPacket == null /*|| curPacket.PacketMatrixData.MatrixCount >= 7*/)
@@ -137,34 +137,39 @@ namespace BMDCubed.src.BMD.Geometry
                         curPacket.AttributeData[attribute] = new List<short>();
                 }
 
-                for (int attribIndex = 0; attribIndex < attribCopy.Count; attribIndex++)
+                for(int tri = 0; tri < 3; tri++)
                 {
-                    // Assign the index into the AttributeData for this attribute on this packet
-                    curPacket.AttributeData[attribCopy[attribIndex]].Add((short)triangleArray[i + attribIndex]);
-
-                    // We only care about the Position attribute while finding skinning information
-                    if (attribCopy[attribIndex] != VertexAttributes.Position)
-                        continue;
-
-                    int vertPosIndex = triangleArray[i + attribIndex];
-
-                    Weight vertexWeight = m_drw1.AllWeights[vertPosIndex];
-                    ushort vertexWeightIndex = (ushort)m_drw1.AllDrw1Weights.IndexOf(vertexWeight);
-
-                    if (!curPacket.PacketMatrixData.MatrixTableData.Contains(vertexWeightIndex))
+                    for (int attribIndex = 0; attribIndex < attribCopy.Count; attribIndex++)
                     {
-                        curPacket.PacketMatrixData.MatrixTableData.Add(vertexWeightIndex);
+                        // Assign the index into the AttributeData for this attribute on this packet
+                        curPacket.AttributeData[attribCopy[attribIndex]].Add((short)triangleArray[colladaIndex + attribIndex]);
+
+                        // We only care about the Position attribute while finding skinning information
+                        if (attribCopy[attribIndex] != VertexAttributes.Position)
+                            continue;
+
+                        int vertPosIndex = triangleArray[colladaIndex + attribIndex];
+
+                        Weight vertexWeight = m_drw1.AllWeights[vertPosIndex];
+                        ushort vertexWeightIndex = (ushort)m_drw1.AllDrw1Weights.IndexOf(vertexWeight);
+
+                        if (!curPacket.PacketMatrixData.MatrixTableData.Contains(vertexWeightIndex))
+                        {
+                            curPacket.PacketMatrixData.MatrixTableData.Add(vertexWeightIndex);
+                        }
+
+                        int positionMatrixIndex = curPacket.PacketMatrixData.MatrixTableData.IndexOf(vertexWeightIndex);
+                        curPacket.AttributeData[VertexAttributes.PositionMatrixIndex].Add((short)(positionMatrixIndex *3));
+                        /*if (!curPacket.WeightIndexes.Contains(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])))
+                        {
+                            curPacket.WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
+                            matrixPosIndex = (curPacket.WeightIndexes.Count - 1) * 3;
+                        }
+                        else
+                            matrixPosIndex = curPacket.WeightIndexes.IndexOf(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])) * 3;*/
                     }
 
-                    int positionMatrixIndex = curPacket.PacketMatrixData.MatrixTableData.IndexOf(vertexWeightIndex);
-                    curPacket.AttributeData[VertexAttributes.PositionMatrixIndex].Add((short)(positionMatrixIndex *3));
-                    /*if (!curPacket.WeightIndexes.Contains(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])))
-                    {
-                        curPacket.WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
-                        matrixPosIndex = (curPacket.WeightIndexes.Count - 1) * 3;
-                    }
-                    else
-                        matrixPosIndex = curPacket.WeightIndexes.IndexOf(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])) * 3;*/
+                    colladaIndex += attribCopy.Count;
                 }
             }
 
