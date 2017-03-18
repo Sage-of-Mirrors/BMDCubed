@@ -13,18 +13,13 @@ namespace BMDCubed.src.BMD.Geometry
         {
             public class MatrixData
             {
-                public ushort Unknown0;
-                public ushort MatrixCount;
-                public uint MatrixFirstIndex;
+                public ushort MatrixCount { get { return (ushort) MatrixTableData.Count; } }
 
                 public List<ushort> MatrixTableData;
 
                 public MatrixData()
                 {
                     MatrixTableData = new List<ushort>();
-                    Unknown0 = 0;
-                    MatrixCount = 0;
-                    MatrixFirstIndex = 0;
                 }
             }
 
@@ -127,7 +122,7 @@ namespace BMDCubed.src.BMD.Geometry
             for (int colladaIndex = 0; colladaIndex < triangleArray.Length;)
             {
                 // If we don't have enough possible spots for our PMI's we'll just start a new packet at the end of this triangle.
-                if (curPacket == null /*|| curPacket.PacketMatrixData.MatrixCount >= 7*/)
+                if (curPacket == null || curPacket.PacketMatrixData.MatrixCount >= 7)
                 {
                     curPacket = new Packet();
                     BatchPackets.Add(curPacket);
