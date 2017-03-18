@@ -149,7 +149,7 @@ namespace BMDCubed.src.BMD.Geometry
                     }
 
                     int positionMatrixIndex = curPacket.PacketMatrixData.MatrixTableData.IndexOf(vertexWeightIndex);
-                    curPacket.AttributeData[VertexAttributes.PositionMatrixIndex].Add((short)positionMatrixIndex);
+                    curPacket.AttributeData[VertexAttributes.PositionMatrixIndex].Add((short)(positionMatrixIndex *3));
                     /*if (!curPacket.WeightIndexes.Contains(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])))
                     {
                         curPacket.WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
@@ -160,18 +160,18 @@ namespace BMDCubed.src.BMD.Geometry
                 }
             }
 
+            // Actually assign the indexes into our AttributeData
+            for (int i = 0; i < triangleArray.Length;)
+            {
+                foreach (var attribute in attribCopy)
+                    curPacket.AttributeData[attribute].Add((short)triangleArray[i++]);
+            }
+
             // Reverse Triangle Winding Order
             int vertexCount = curPacket.AttributeData[VertexAttributes.Position].Count;
             for (int i = 0; i < vertexCount; i += 3)
             {
-                SwapVertexes(curPacket, i, i, attributes);
-            }
-
-            // Actually assign the indexes into our AttributeData
-            for(int i  = 0; i < triangleArray.Length; )
-            {
-                foreach (var attribute in attribCopy)
-                    curPacket.AttributeData[attribute].Add((short)triangleArray[i++]);
+                SwapVertexes(curPacket, i, i+2, attributes);
             }
         }
 
