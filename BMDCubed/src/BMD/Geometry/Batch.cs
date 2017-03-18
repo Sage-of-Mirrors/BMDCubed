@@ -171,13 +171,9 @@ namespace BMDCubed.src.BMD.Geometry
 
                     colladaIndex += attribCopy.Count;
                 }
-            }
 
-            // Reverse Triangle Winding Order
-            int vertexCount = curPacket.AttributeData[VertexAttributes.Position].Count;
-            for (int i = 0; i < vertexCount; i += 3)
-            {
-                SwapVertexes(curPacket, i, i+2, attributes);
+                int firstVert = curPacket.AttributeData[VertexAttributes.Position].Count -3;
+                SwapVertexes(curPacket, firstVert, firstVert + 2, attributes);
             }
         }
 
