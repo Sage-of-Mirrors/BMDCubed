@@ -247,7 +247,7 @@ namespace BMDCubed.src.BMD.Geometry
                 offset += (ushort)(ActiveAttributesPerBatch[batchAttributeIndex].Count + 1);
             }
 
-            attributeListOffset = offset;
+            attributeListOffset = (ushort)(offset * 8);
         }
 
         internal void WriteBatchMatrixData(List<Batch.Packet> batchPackets, out ushort firstMatrixDataIndex)

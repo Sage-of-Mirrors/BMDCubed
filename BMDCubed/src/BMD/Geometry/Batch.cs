@@ -42,18 +42,24 @@ namespace BMDCubed.src.BMD.Geometry
                 writer.Write((byte)0x90); // Write primitive type. For the foreseeable future, we will only support triangles, which are 0x90.
                 writer.Write((ushort)numVertices); // Vertex count
 
+                List<VertexAttributes> attributeOrder = new List<VertexAttributes>();
+
+                foreach (var kvp in AttributeData)
+                    attributeOrder.Add(kvp.Key);
+
+                attributeOrder.Sort();
 
                 // For each vertex, we're going to run through the vertex attributes
                 // and write the corresponding data.
                 for (int i = 0; i < numVertices; i++)
                 {
                     // Write each attribute for each vertex
-                    foreach (var kvp in AttributeData)
+                    foreach (VertexAttributes attrib in attributeOrder)
                     {
-                        if (kvp.Key == VertexAttributes.PositionMatrixIndex)
-                            writer.Write((byte)(kvp.Value[i])); // PositionMatrixIndex needs to be 8 bits, so it's a byte
+                        if (attrib == VertexAttributes.PositionMatrixIndex)
+                            writer.Write((byte)(AttributeData[attrib][i])); // PositionMatrixIndex needs to be 8 bits, so it's a byte
                         else
-                            writer.Write(kvp.Value[i]); // All other attributes will use 16 bit short
+                            writer.Write(AttributeData[attrib][i]); // All other attributes will use 16 bit short
                     }
                 }
 
@@ -156,6 +162,11 @@ namespace BMDCubed.src.BMD.Geometry
                             {
                                 curPacket.PacketMatrixData.MatrixTableData.Add(vertexWeightIndex);
                             }
+                        }
+                        else
+                        {
+                            if (curPacket.PacketMatrixData.MatrixCount == 0)
+                                curPacket.PacketMatrixData.MatrixTableData.Add((ushort)0);
                         }
 
                         int positionMatrixIndex = curPacket.PacketMatrixData.MatrixTableData.IndexOf(vertexWeightIndex);
