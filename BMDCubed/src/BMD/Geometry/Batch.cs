@@ -185,59 +185,6 @@ namespace BMDCubed.src.BMD.Geometry
             m_attributeListCopy = attributes;
         }
 
-        private void GetVertexDataNotWeighted(int[] indexArray)
-        {
-            throw new NotImplementedException();
-
-            /*Packet curPacket = BatchPackets[BatchPackets.Count - 1];
-
-            // This will get the vertex indexes into VertIndexes.
-            // This version does not use the PositionMatrixIndex attribute.
-            for (int i = 0; i < indexArray.Length; i += ActiveAttributes.Count)
-            {
-                for (int attrib = 0; attrib < ActiveAttributes.Count; attrib++)
-                {
-                    if (ActiveAttributes[attrib] == VertexAttributes.Position)
-                    {
-                        int positionIndex = indexArray[i + attrib];
-                        curPacket.PositionIndex.Add(positionIndex);
-                    }
-
-                    curPacket.VertIndexes.Add((short)indexArray[i + attrib]);
-                }
-            }
-
-            foreach (VertexAttributes attrib in ActiveAttributes)
-                curPacket.AttributeData.Add(attrib, new List<short>());
-
-            // The triangles from the DAE have the wrong winding order. We need to swap the first
-            // and last vertexes of each triangle to flip them around.
-            // If we don't do that, the mesh will render inside-out!
-            // We add 3 * ActiveAttributes.Count so that we can get the correct indexes of each
-            // vertex triplet.
-            for (int i = 0; i < curPacket.VertIndexes.Count; i += 3 * ActiveAttributes.Count)
-            {
-                SwapVertexes(curPacket, i, i + (2 * ActiveAttributes.Count));
-            }
-
-            // We'll separate the indexes by attribute type. This will allow us to 
-            // sort the attributes in ActiveAttributes independently of the indexes'
-            // order. With that, we can give GX the attribute indexes in the order
-            // that it expects.
-            int runningIndex = 0;
-            for (int i = 0; i < numVerts; i++)
-            {
-                foreach (VertexAttributes attrib in ActiveAttributes)
-                {
-                    curPacket.AttributeData[attrib].Add(curPacket.VertIndexes[runningIndex++]);
-                }
-            }
-
-            ActiveAttributes.Sort();
-
-            curPacket.WeightIndexes.Add(0);*/
-        }
-
         private void SwapVertexes(Packet packet, int vert1, int vert2, IList<VertexAttributes> attributes)
         {
             int[] vertData1 = new int[attributes.Count]; // Data for vertex 1
