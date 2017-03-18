@@ -18,7 +18,6 @@ namespace BMDCubed.src.BMD.Geometry
         // Then, in the actual batch, we can store the index to their set of attributes.
         List<List<VertexAttributes>> ActiveAttributesPerBatch;
 
-        private EndianBinaryWriter m_batchAttributeData;
         private EndianBinaryWriter m_batchPacketData;
         private EndianBinaryWriter m_batchPrimitiveData;
         private EndianBinaryWriter m_matrixTableData;
@@ -56,7 +55,6 @@ namespace BMDCubed.src.BMD.Geometry
         public void WriteSHP1(EndianBinaryWriter writer)
         {
             vertexAttributeOffsets = new List<int>();
-            m_batchAttributeData = new EndianBinaryWriter(new MemoryStream(), Endian.Big);
             m_batchPacketData = new EndianBinaryWriter(new MemoryStream(), Endian.Big);
             m_matrixTableData = new EndianBinaryWriter(new MemoryStream(), Endian.Big);
             m_matrixDataData = new EndianBinaryWriter(new MemoryStream(), Endian.Big);
@@ -91,6 +89,8 @@ namespace BMDCubed.src.BMD.Geometry
             // Next we write the MatrixTable that all Batches contributed to
             Util.WriteOffset(writer, 0x1C);
             WriteMatrixTableToStream(writer);
+            Util.PadStreamWithString(writer, 32); // Pad out to 32 byte alignment.
+
 
             // Then we write the PrimitiveData that all Batches contributed to
             Util.WriteOffset(writer, 0x20);
@@ -193,20 +193,37 @@ namespace BMDCubed.src.BMD.Geometry
 
         private void WriteMatrixTableToStream(EndianBinaryWriter writer)
         {
-            var memoryStream = m_matrixTableData.BaseStream as MemoryStream;
+            var memoryStream = m_matrixDataData.BaseStream as MemoryStream;
             writer.Write(memoryStream.ToArray());
         }
 
         private void WriteMatrixDataToStream(EndianBinaryWriter writer)
         {
-            var memoryStream = m_matrixDataData.BaseStream as MemoryStream;
+            var memoryStream = m_matrixTableData.BaseStream as MemoryStream;
             writer.Write(memoryStream.ToArray());
         }
 
         private void WriteBatchAttributesToStream(EndianBinaryWriter writer)
         {
-            var memoryStream = m_batchAttributeData.BaseStream as MemoryStream;
-            writer.Write(memoryStream.ToArray());
+            foreach(var attributeSet in ActiveAttributesPerBatch)
+            {
+                // Write each attribute in this set
+                foreach (var attribute in attributeSet)
+                {
+                    // Write the Attribute
+                    writer.Write((int)attribute);
+
+                    // Write the Data Type
+                    if (attribute == VertexAttributes.PositionMatrixIndex)
+                        writer.Write((int)0x1); // Data Type is an Unsigned Byte (U8)
+                    else
+                        writer.Write((int)0x3); // Data Type is Unsigned Short (U16);
+                }
+
+                // Add null attribute. Tells the GPU there are no more attributes to read
+                writer.Write((int)0xFF);
+                writer.Write((int)0);
+            }
         }
 
         private void WritePacketDataToStream(EndianBinaryWriter writer)
@@ -221,28 +238,22 @@ namespace BMDCubed.src.BMD.Geometry
             writer.Write(memoryStream.ToArray());
         }
 
-        internal void WriteBatchAttributes(int batchAttributeIndex, out ushort attributeListOffset)
+        internal void GetBatchAttributeOffset(int batchAttributeIndex, out ushort attributeListOffset)
         {
-            var attributes = ActiveAttributesPerBatch[batchAttributeIndex];
-            attributeListOffset = (ushort)m_batchAttributeData.BaseStream.Position;
-
-            foreach (var attribute in attributes)
+            ushort offset = 0;
+            for(int i = 0; i < batchAttributeIndex; i++)
             {
-                // Write the Attribute
-                m_batchAttributeData.Write((int)attribute);
-
-                // Write the Data Type
-                if (attribute == VertexAttributes.PositionMatrixIndex)
-                    m_batchAttributeData.Write(0x1); // Data Type is an Unsigned Byte (U8)
-                else
-                    m_batchAttributeData.Write(0x3); // Data Type is Unsigned Short (U16);
+                // We add one attribute to the count to represent the null attribute added to each set.
+                offset += (ushort)(ActiveAttributesPerBatch[batchAttributeIndex].Count + 1);
             }
+
+            attributeListOffset = offset;
         }
 
         internal void WriteBatchMatrixData(List<Batch.Packet> batchPackets, out ushort firstMatrixDataIndex)
         {
             // Return the first matrix for this batch.
-            firstMatrixDataIndex = (ushort)(m_matrixDataData.BaseStream.Length / 0x2);
+            firstMatrixDataIndex = (ushort)(m_matrixTableData.BaseStream.Length / 0x8);
 
             // Remember:
             // MatrixTable is just a header that is associated with each packet that has Unknown0, MatrixCount and FirstMatrixIndex
@@ -252,7 +263,7 @@ namespace BMDCubed.src.BMD.Geometry
             {
                 m_matrixTableData.Write((ushort)0); // Unknown 0
                 m_matrixTableData.Write((ushort)packet.PacketMatrixData.MatrixTableData.Count); // How many matrices
-                m_matrixTableData.Write((ushort)m_matrixDataData.BaseStream.Length / 2); // Index to the first one
+                m_matrixTableData.Write((uint)m_matrixDataData.BaseStream.Length / 2); // Index to the first one
 
                 // Then write all of the actual indexes
                 foreach (var matrixIndex in packet.PacketMatrixData.MatrixTableData)
@@ -263,7 +274,7 @@ namespace BMDCubed.src.BMD.Geometry
         internal void WriteBatchPackets(List<Batch.Packet> batchPackets, out ushort firstPacketIndex)
         {
             // Return the first packet for this batch
-            firstPacketIndex = (ushort)(m_batchPacketData.BaseStream.Length / 0x4);
+            firstPacketIndex = (ushort)(m_batchPacketData.BaseStream.Length / 0x8);
 
             foreach(var packet in batchPackets)
             {

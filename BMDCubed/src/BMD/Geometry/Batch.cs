@@ -147,6 +147,16 @@ namespace BMDCubed.src.BMD.Geometry
                     {
                         curPacket.PacketMatrixData.MatrixTableData.Add(vertexWeightIndex);
                     }
+
+                    int positionMatrixIndex = curPacket.PacketMatrixData.MatrixTableData.IndexOf(vertexWeightIndex);
+                    curPacket.AttributeData[VertexAttributes.PositionMatrixIndex].Add((short)positionMatrixIndex);
+                    /*if (!curPacket.WeightIndexes.Contains(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])))
+                    {
+                        curPacket.WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
+                        matrixPosIndex = (curPacket.WeightIndexes.Count - 1) * 3;
+                    }
+                    else
+                        matrixPosIndex = curPacket.WeightIndexes.IndexOf(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])) * 3;*/
                 }
             }
 
@@ -155,6 +165,13 @@ namespace BMDCubed.src.BMD.Geometry
             for (int i = 0; i < vertexCount; i += 3)
             {
                 SwapVertexes(curPacket, i, i, attributes);
+            }
+
+            // Actually assign the indexes into our AttributeData
+            for(int i  = 0; i < triangleArray.Length; )
+            {
+                foreach (var attribute in attribCopy)
+                    curPacket.AttributeData[attribute].Add((short)triangleArray[i++]);
             }
         }
 
@@ -250,7 +267,7 @@ namespace BMDCubed.src.BMD.Geometry
             ushort firstMatrixDataIndex; // First Matrix Data this Batch uses
             ushort firstPacketIndex; // First Packet this Batch uses
 
-            shp1.WriteBatchAttributes(m_batchAttributeIndex, out attributeListOffset);
+            shp1.GetBatchAttributeOffset(m_batchAttributeIndex, out attributeListOffset);
             shp1.WriteBatchMatrixData(BatchPackets, out firstMatrixDataIndex);
             shp1.WriteBatchPackets(BatchPackets, out firstPacketIndex);
 
@@ -261,7 +278,7 @@ namespace BMDCubed.src.BMD.Geometry
             writer.Write((short)firstMatrixDataIndex);  // First Matrix Index
             writer.Write((short)firstPacketIndex);      // First Packet Index
 
-            writer.Write((short)0xFF);                  // Padding
+            writer.Write((ushort)0xFFFF);                  // Padding
             writer.Write(m_bounds.SphereRadius);        // Bounding Sphere Diameter
             writer.Write(m_bounds.Minimum.X);           // Bounding Box Mins
             writer.Write(m_bounds.Minimum.Y);
