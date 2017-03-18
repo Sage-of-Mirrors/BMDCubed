@@ -13,7 +13,7 @@ namespace BMDCubed.src.BMD.Geometry
         {
             public class MatrixData
             {
-                public ushort MatrixCount { get { return (ushort) MatrixTableData.Count; } }
+                public ushort MatrixCount { get { return (ushort)MatrixTableData.Count; } }
 
                 public List<ushort> MatrixTableData;
 
@@ -42,7 +42,7 @@ namespace BMDCubed.src.BMD.Geometry
                 writer.Write((byte)0x90); // Write primitive type. For the foreseeable future, we will only support triangles, which are 0x90.
                 writer.Write((ushort)numVertices); // Vertex count
 
-                
+
                 // For each vertex, we're going to run through the vertex attributes
                 // and write the corresponding data.
                 for (int i = 0; i < numVertices; i++)
@@ -103,10 +103,10 @@ namespace BMDCubed.src.BMD.Geometry
             indexArrayString = indexArrayString.Replace('\n', ' ').Trim();
             int[] triangleIndexes = Grendgine_Collada_Parse_Utils.String_To_Int(indexArrayString);
 
-            if (m_drw1 != null)
-                GetVertexDataWeighted(triangleIndexes, batchData.GetIndexForBatchAttributes(m_batchAttributeIndex));
-            else
-                GetVertexDataNotWeighted(triangleIndexes);
+            //if (m_drw1 != null)
+            GetVertexDataWeighted(triangleIndexes, batchData.GetIndexForBatchAttributes(m_batchAttributeIndex));
+            //else
+            //GetVertexDataNotWeighted(triangleIndexes);
         }
 
         private void GetVertexDataWeighted(int[] triangleArray, List<VertexAttributes> attributes)
@@ -132,7 +132,7 @@ namespace BMDCubed.src.BMD.Geometry
                         curPacket.AttributeData[attribute] = new List<short>();
                 }
 
-                for(int tri = 0; tri < 3; tri++)
+                for (int tri = 0; tri < 3; tri++)
                 {
                     for (int attribIndex = 0; attribIndex < attribCopy.Count; attribIndex++)
                     {
@@ -143,26 +143,35 @@ namespace BMDCubed.src.BMD.Geometry
                         if (attribCopy[attribIndex] != VertexAttributes.Position)
                             continue;
 
-                        int vertPosIndex = triangleArray[colladaIndex + attribIndex];
+                        ushort vertexWeightIndex = 0;
 
-                        Weight vertexWeight = m_drw1.AllWeights[vertPosIndex];
-                        ushort vertexWeightIndex = (ushort)m_drw1.AllDrw1Weights.IndexOf(vertexWeight);
-
-                        if (!curPacket.PacketMatrixData.MatrixTableData.Contains(vertexWeightIndex))
+                        // We only generate a real PMI if the DRW1 section has skinning data
+                        if (m_drw1 != null)
                         {
-                            curPacket.PacketMatrixData.MatrixTableData.Add(vertexWeightIndex);
+                            int vertPosIndex = triangleArray[colladaIndex + attribIndex];
+                            Weight vertexWeight = m_drw1.AllWeights[vertPosIndex];
+                            vertexWeightIndex = (ushort)m_drw1.AllDrw1Weights.IndexOf(vertexWeight);
+
+                            if (!curPacket.PacketMatrixData.MatrixTableData.Contains(vertexWeightIndex))
+                            {
+                                curPacket.PacketMatrixData.MatrixTableData.Add(vertexWeightIndex);
+                            }
                         }
 
                         int positionMatrixIndex = curPacket.PacketMatrixData.MatrixTableData.IndexOf(vertexWeightIndex);
-                        curPacket.AttributeData[VertexAttributes.PositionMatrixIndex].Add((short)(positionMatrixIndex *3));
+                        curPacket.AttributeData[VertexAttributes.PositionMatrixIndex].Add((short)(positionMatrixIndex * 3));
                     }
 
                     colladaIndex += attribCopy.Count;
                 }
 
-                int firstVert = curPacket.AttributeData[VertexAttributes.Position].Count -3;
+                int firstVert = curPacket.AttributeData[VertexAttributes.Position].Count - 3;
                 SwapVertexes(curPacket, firstVert, firstVert + 2, attributes);
             }
+
+            // Sort the Attributes in ascending order to make GX happy
+            attributes.Sort();
+            m_attributeListCopy = attributes;
         }
 
         private void GetVertexDataNotWeighted(int[] indexArray)
@@ -311,12 +320,8 @@ namespace BMDCubed.src.BMD.Geometry
             }
 
             // If this model has skinning data then we'll insert a PositionMatrixIndex attribute.
-            if (m_drw1 != null)
-                attributes.Add(VertexAttributes.PositionMatrixIndex);
-
-            // Sort the Attributes in ascending order to make GX happy
-            attributes.Sort();
-            m_attributeListCopy = attributes;
+            //if (m_drw1 != null)
+            attributes.Add(VertexAttributes.PositionMatrixIndex);
 
             return attributes.ToArray();
         }
