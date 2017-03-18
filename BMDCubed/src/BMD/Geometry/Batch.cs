@@ -155,13 +155,6 @@ namespace BMDCubed.src.BMD.Geometry
 
                         int positionMatrixIndex = curPacket.PacketMatrixData.MatrixTableData.IndexOf(vertexWeightIndex);
                         curPacket.AttributeData[VertexAttributes.PositionMatrixIndex].Add((short)(positionMatrixIndex *3));
-                        /*if (!curPacket.WeightIndexes.Contains(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])))
-                        {
-                            curPacket.WeightIndexes.Add(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex]));
-                            matrixPosIndex = (curPacket.WeightIndexes.Count - 1) * 3;
-                        }
-                        else
-                            matrixPosIndex = curPacket.WeightIndexes.IndexOf(drw1.AllDrw1Weights.IndexOf(drw1.AllWeights[positionIndex])) * 3;*/
                     }
 
                     colladaIndex += attribCopy.Count;
