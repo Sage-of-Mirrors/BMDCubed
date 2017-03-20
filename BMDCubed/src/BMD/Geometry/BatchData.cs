@@ -5,7 +5,6 @@ using OpenTK;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System;
 
 namespace BMDCubed.src.BMD.Geometry
 {
@@ -111,78 +110,15 @@ namespace BMDCubed.src.BMD.Geometry
             Util.WriteOffset(writer, 4);
 
 
-            // Write attribute data
-            /*writer.Write(batchAttributesData.ToArray());
-            batchAttributesData.Dispose();
-            batchAttributesData = null;
+            m_batchPacketData.Dispose();
+            m_batchPrimitiveData.Dispose();
+            m_matrixTableData.Dispose();
+            m_matrixDataData.Dispose();
 
-            //Util.PadStreamWithString(writer, 32);
-
-            // Write matrix indexes offset
-            Util.WriteOffset(writer, 0x1C);
-
-            // Write matrix indexes
-            foreach (Batch bat in Batches)
-            {
-                bat.WriteMatrixIndexes(writer);
-            }
-
-            Util.PadStreamWithString(writer, 32);
-
-            // Write packet offset
-            Util.WriteOffset(writer, 0x20);
-
-            // We're going to keep track of the packets' length and offset relative to the
-            // start of the packet data so we can write the packet info data later on.
-            List<int> packetOffsets = new List<int>();
-            List<int> packetSizes = new List<int>();
-            packetOffsets.Add(0);
-
-            int basePos = (int)writer.BaseStream.Length; // Offset of first packet
-            int lastPos = basePos; // This will hold the offset of the last packet so we can calculate size
-
-            // Write packet data
-            foreach (Batch bat in Batches)
-            {
-                bat.WritePackets(writer);
-                packetOffsets.Add((int)writer.BaseStream.Length - basePos);
-                packetSizes.Add((int)writer.BaseStream.Length - lastPos);
-
-                lastPos = (int)writer.BaseStream.Length;
-            }
-
-            // Write matrix info offset
-            Util.WriteOffset(writer, 0x24);
-
-            int matrixIndexCount = 0;
-
-            // Write matrix info
-            foreach (Batch bat in Batches)
-            {
-                foreach (Batch.Packet packet in bat.BatchPackets)
-                {
-                    writer.Write((short)1);
-                    writer.Write((ushort)packet.WeightIndexes.Count);
-                    writer.Write(matrixIndexCount);
-
-                    matrixIndexCount += packet.WeightIndexes.Count;
-                }
-            }
-
-            // Write packet info offset
-            Util.WriteOffset(writer, 0x28);
-
-            // Write packet info
-            for (int i = 0; i < Batches.Count; i++)
-            {
-                writer.Write(packetSizes[i]);
-                writer.Write(packetOffsets[i]);
-            }
-
-            Util.PadStreamWithString(writer, 32);
-
-            // Write chunk size
-            Util.WriteOffset(writer, 4);*/
+            m_batchPacketData = null;
+            m_batchPrimitiveData = null;
+            m_matrixTableData = null;
+            m_matrixDataData = null;
         }
 
         private void WriteBatchDataToStream(EndianBinaryWriter writer)
@@ -205,7 +141,7 @@ namespace BMDCubed.src.BMD.Geometry
 
         private void WriteBatchAttributesToStream(EndianBinaryWriter writer)
         {
-            foreach(var attributeSet in ActiveAttributesPerBatch)
+            foreach (var attributeSet in ActiveAttributesPerBatch)
             {
                 // Write each attribute in this set
                 foreach (var attribute in attributeSet)
@@ -241,7 +177,7 @@ namespace BMDCubed.src.BMD.Geometry
         internal void GetBatchAttributeOffset(int batchAttributeIndex, out ushort attributeListOffset)
         {
             ushort offset = 0;
-            for(int i = 0; i < batchAttributeIndex; i++)
+            for (int i = 0; i < batchAttributeIndex; i++)
             {
                 // We add one attribute to the count to represent the null attribute added to each set.
                 offset += (ushort)(ActiveAttributesPerBatch[batchAttributeIndex].Count + 1);
@@ -259,7 +195,7 @@ namespace BMDCubed.src.BMD.Geometry
             // MatrixTable is just a header that is associated with each packet that has Unknown0, MatrixCount and FirstMatrixIndex
             // then we have the MatrixData which is the raw indexes. So we need to write both of them separately,
             // and FirstMatrixIndex is the index into the MatrixData that that packet uses first, and then MatrixCount successive ones follow.
-            foreach(var packet in batchPackets)
+            foreach (var packet in batchPackets)
             {
                 m_matrixTableData.Write((ushort)0); // Unknown 0
                 m_matrixTableData.Write((ushort)packet.PacketMatrixData.MatrixTableData.Count); // How many matrices
@@ -276,7 +212,7 @@ namespace BMDCubed.src.BMD.Geometry
             // Return the first packet for this batch
             firstPacketIndex = (ushort)(m_batchPacketData.BaseStream.Length / 0x8);
 
-            foreach(var packet in batchPackets)
+            foreach (var packet in batchPackets)
             {
                 long streamStart = m_batchPrimitiveData.BaseStream.Position;
 
