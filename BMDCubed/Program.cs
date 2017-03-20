@@ -63,6 +63,7 @@ namespace BMDCubed
         static void DisplayHelpMessage()
         {
             Console.WriteLine("BMDCubed written by Sage_of_Mirrors (@SageOfMirrors) and Lord Ned (@LordNed).");
+            Console.WriteLine("Special thanks to Shin/Kaio for making models to test with.");
             Console.WriteLine("Thanks to those who came before us.");
             Console.WriteLine("Usage: BMDCubed input_file [output_file]");
         }

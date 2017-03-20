@@ -11,6 +11,7 @@ namespace BMDCubed.src.BMD.Geometry
     class BatchData
     {
         public List<Batch> Batches;
+        public int PacketCount;
         List<int> vertexAttributeOffsets;
 
         // Batches can share their attributes, so we store an array of each set of attributes batches use.
@@ -42,6 +43,12 @@ namespace BMDCubed.src.BMD.Geometry
             foreach (var batch in Batches)
             {
                 batch.ConvertDataToFinalFormat(this);
+            }
+
+            // Get final packet count
+            foreach (var batch in Batches)
+            {
+                PacketCount += batch.BatchPackets.Count;
             }
         }
 
