@@ -607,7 +607,7 @@ namespace BMDCubed.Materials
                 // Textures
                 for (int text = 0; text < 8; text++)
                 {
-                    if ((mat.Textures[text] != null) && (!TextureList.Contains(mat.Textures[text])))
+                    if ((mat.Textures[text] != null) && (!TextureList.Exists(x => x.Name == mat.Textures[text].Name))) 
                         TextureList.Add(mat.Textures[text]);
                 }
                 // Tev orders
@@ -765,7 +765,7 @@ namespace BMDCubed.Materials
                 if (mat.Textures[i] == null)
                     writer.Write((short)-1);
                 else
-                    writer.Write((short)TextureList.IndexOf(mat.Textures[i]));
+                    writer.Write((short)TextureList.IndexOf(TextureList.Find(x=>x.Name == mat.Textures[i].Name)));
             }
             // TevKonstColors
             for (int i = 0; i < 4; i++)

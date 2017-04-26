@@ -33,7 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>resource\icon.ico</ApplicationIcon>
+    <ApplicationIcon>bmd3.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EndianBinaryStreams, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -107,6 +107,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="bmd3.ico" />
     <Content Include="lib\EndianBinaryStreams.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -116,7 +117,8 @@
     <Content Include="lib\OpenTK.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="resource\icon.ico" />
+    <Content Include="resource\test.ico" />
+    <Content Include="test.ico" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
