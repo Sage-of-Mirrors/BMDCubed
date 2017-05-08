@@ -7,6 +7,8 @@ using grendgine_collada;
 using System.IO;
 using BMDCubed.src;
 using GameFormatReader.Common;
+using System.Globalization;
+using System.Threading;
 
 namespace BMDCubed
 {
@@ -49,6 +51,8 @@ namespace BMDCubed
             }
 
             #endregion
+
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 
             Grendgine_Collada sourceModel = Grendgine_Collada.Grendgine_Load_File(inputFileName);
             BMDManager manager = new BMDManager(sourceModel);
